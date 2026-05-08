@@ -17,6 +17,10 @@ export const DROPS_PROGRAM_ID =
 export const GARMENT_MINT = 
   process.env.NEXT_PUBLIC_GARMENT_MINT || 'G17eNpsCn4S2Xtr4f9t9fmgyf6ZVFEpdXnpqJBiBCFEo';
 
+// ── Solana Network ───────────────────────────────────────────────────
+export const CLUSTER = 'devnet';
+export const SOLSCAN_BASE = 'https://solscan.io';
+
 // ── Drop Configuration ───────────────────────────────────────────────
 export const DROP_ID = 'drop-zero';
 export const PRICE_SOL = 2.5;
