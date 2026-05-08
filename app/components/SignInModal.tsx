@@ -25,9 +25,9 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
     if (!email.trim() || isLoading) return;
 
     setIsLoading(true);
-    // Simulate brief processing
-    await new Promise(resolve => setTimeout(resolve, 800));
-    signIn(email.trim());
+    // Simulate brief processing for premium feel
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    await signIn(email.trim());
     setIsLoading(false);
     setEmail('');
     onClose();
