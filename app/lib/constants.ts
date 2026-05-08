@@ -20,6 +20,7 @@ export const GARMENT_MINT =
 // ── Solana Network ───────────────────────────────────────────────────
 export const CLUSTER = 'devnet';
 export const SOLSCAN_BASE = 'https://solscan.io';
+export const RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
 
 // ── Drop Configuration ───────────────────────────────────────────────
 export const DROP_ID = 'drop-zero';
