@@ -24,7 +24,7 @@ button{font-family:var(--f);cursor:pointer;border:none;background:none;color:inh
 .nav-inner{max-width:1400px;margin:0 auto;height:100%;display:flex;align-items:center;padding:0 2rem;gap:1.5rem}
 .nav-brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .nav-logo{height:32px;width:auto;filter:drop-shadow(0 0 8px rgba(255,255,255,.1))}
-.nav-wordmark{font-family:var(--fn);font-size:1.35rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:linear-gradient(180deg,#fff,#bbb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-wordmark{font-family:var(--fn);font-size:1.35rem;font-weight:600;letter-spacing:.05em;background:linear-gradient(180deg,#fff,#bbb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .nav-center{display:flex;gap:4px;margin:0 auto;position:relative;padding:4px;background:rgba(255,255,255,.03);border-radius:var(--rp);border:1px solid var(--brd)}
 .nav-link{padding:.45rem 1.2rem;border-radius:var(--rp);font-size:.85rem;font-weight:500;color:var(--td);transition:color .3s;position:relative;z-index:1}
 .nav-link:hover,.nav-link.active{color:var(--t)}
@@ -217,7 +217,7 @@ button{font-family:var(--f);cursor:pointer;border:none;background:none;color:inh
 .footer-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
 .footer-brand{display:flex;align-items:center;gap:8px}
 .footer-logo{height:22px}
-.footer-name{font-family:var(--fn);font-size:.85rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.footer-name{font-family:var(--fn);font-size:.85rem;font-weight:600;letter-spacing:.05em}
 .footer-tagline{font-size:.78rem;color:var(--acc);font-weight:600;letter-spacing:.06em}
 .footer-sub{font-size:.68rem;color:var(--tm)}
 
