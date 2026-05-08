@@ -23,7 +23,9 @@ import {
 import { solscanTxUrl } from '@/lib/utils';
 import { showToast } from '@/components/Toast';
 import SignInModal from '@/components/SignInModal';
+import Selector from '@/components/Selector';
 import { saveOrder } from '@/lib/db';
+
 
 type TxState = 'idle' | 'signing' | 'success' | 'error' | 'soldout';
 
@@ -42,7 +44,9 @@ export default function DropPage() {
   const [txResult, setTxResult] = useState<TxResult>({});
   const [loading, setLoading] = useState(true);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const [selectedSize, setSelectedSize] = useState('Medium');
   const processingRef = useRef(false);
+
 
   // Fetch drop data on mount
   useEffect(() => {
@@ -180,7 +184,18 @@ export default function DropPage() {
           </div>
 
 
+          {/* Selection */}
+          <div className="flex flex-col gap-6">
+            <Selector 
+              label="Select Size" 
+              options={['Small', 'Medium', 'Large', 'Extra Large']} 
+              selected={selectedSize} 
+              onChange={setSelectedSize} 
+            />
+          </div>
+
           {/* Mint Progress */}
+
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-baseline">
               <span className="text-[0.65rem] text-[#666] uppercase tracking-[0.12em] font-bold">Supply Status</span>
