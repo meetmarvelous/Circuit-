@@ -1,4 +1,4 @@
-:root{--bg:#050505;--bg2:rgba(255,255,255,.035);--bg3:rgba(255,255,255,.06);--brd:rgba(255,255,255,.08);--brd2:rgba(255,255,255,.14);--p:#9945FF;--g:#14F195;--t:#fff;--td:#888;--tm:#555;--gp:rgba(153,69,255,.15);--gg:rgba(20,241,149,.10);--f:'Outfit',sans-serif;--m:'JetBrains Mono',monospace;--r:24px;--rs:14px;--rp:100px;--e:cubic-bezier(.16,1,.3,1);--tr:all .4s var(--e);--nh:72px}
+:root{--bg:#050505;--bg2:rgba(255,255,255,.035);--bg3:rgba(255,255,255,.06);--brd:rgba(255,255,255,.08);--brd2:rgba(255,255,255,.14);--p:#9945FF;--g:#14F195;--t:#fff;--td:#888;--tm:#555;--f:'Outfit',sans-serif;--fn:'Montserrat',sans-serif;--m:'JetBrains Mono',monospace;--r:24px;--rs:14px;--rp:100px;--e:cubic-bezier(.16,1,.3,1);--tr:all .4s var(--e);--nh:72px}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth;overflow-x:hidden}
 body{background:var(--bg);color:var(--t);font-family:var(--f);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
@@ -24,7 +24,7 @@ button{font-family:var(--f);cursor:pointer;border:none;background:none;color:inh
 .nav-inner{max-width:1400px;margin:0 auto;height:100%;display:flex;align-items:center;padding:0 2rem;gap:1.5rem}
 .nav-brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .nav-logo{height:32px;width:auto;filter:drop-shadow(0 0 8px rgba(255,255,255,.1))}
-.nav-wordmark{font-size:1.45rem;font-weight:700;letter-spacing:-.02em;background:linear-gradient(180deg,#fff,#bbb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-wordmark{font-family:var(--fn);font-size:1.35rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;background:linear-gradient(180deg,#fff,#bbb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .nav-center{display:flex;gap:4px;margin:0 auto;position:relative;padding:4px;background:rgba(255,255,255,.03);border-radius:var(--rp);border:1px solid var(--brd)}
 .nav-link{padding:.45rem 1.2rem;border-radius:var(--rp);font-size:.85rem;font-weight:500;color:var(--td);transition:color .3s;position:relative;z-index:1}
 .nav-link:hover,.nav-link.active{color:var(--t)}
@@ -183,7 +183,8 @@ button{font-family:var(--f);cursor:pointer;border:none;background:none;color:inh
 .perm-notice p{font-size:.82rem;line-height:1.6;color:var(--td)}
 
 /* Tx Result */
-.tx-area{max-width:540px;margin:1.2rem auto 0;text-align:center}
+.tx-area{max-width:540px;margin:1.2rem 0 0;text-align:left}
+.confirm-card .tx-area{margin:1.2rem auto 0;text-align:center}
 .tx-msg{display:inline-flex;align-items:center;gap:10px;padding:.85rem 1.4rem;border-radius:var(--rs);font-size:.85rem;font-weight:500;animation:fadeIn .5s var(--e)}
 .tx-msg.ok{background:rgba(20,241,149,.08);border:1px solid rgba(20,241,149,.2);color:var(--g)}
 .tx-msg.err{background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);color:#ff5050}
@@ -216,7 +217,7 @@ button{font-family:var(--f);cursor:pointer;border:none;background:none;color:inh
 .footer-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
 .footer-brand{display:flex;align-items:center;gap:8px}
 .footer-logo{height:22px}
-.footer-name{font-size:.9rem;font-weight:600}
+.footer-name{font-family:var(--fn);font-size:.85rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
 .footer-tagline{font-size:.78rem;color:var(--g);font-weight:600;letter-spacing:.06em}
 .footer-sub{font-size:.68rem;color:var(--tm)}
 
