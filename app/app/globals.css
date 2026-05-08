@@ -4,8 +4,16 @@
   --font-brand: "Montserrat", sans-serif;
   --font-body: "Outfit", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+  
   --color-platinum: #D1D1D1;
   --color-error: #FF5050;
+
+  --animate-fade-in: fadeIn 0.4s ease-out forwards;
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
 @layer base {
@@ -78,21 +86,6 @@
     animation: shimmer 3s infinite linear;
   }
 
-  /* ── Animations ───────────────────────────────────────────────────── */
-  @keyframes shimmer {
-    0% { background-position: 100% 0%; }
-    100% { background-position: -100% 0%; }
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .animate-fadeIn {
-    animation: fadeIn 0.4s ease-out forwards;
-  }
-
   /* ── Ambient Effects ─────────────────────────────────────────────── */
   .ambient-orb {
     @apply absolute blur-[120px] rounded-full opacity-20 pointer-events-none;
@@ -108,7 +101,7 @@
 
   /* ── Transaction Messages ────────────────────────────────────────── */
   .tx-msg {
-    @apply flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-semibold border backdrop-blur-[12px] animate-fadeIn;
+    @apply flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-semibold border backdrop-blur-[12px] animate-fade-in;
   }
 
   .tx-msg.ok {
@@ -118,6 +111,12 @@
   .tx-msg.err {
     @apply bg-[#FF5050]/[0.05] border-[#FF5050]/[0.2] text-[#FF5050];
   }
+}
+
+/* ── Custom Animations (Plain CSS) ─────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: 100% 0%; }
+  100% { background-position: -100% 0%; }
 }
 
 /* ── Responsive Refinements ────────────────────────────────────────── */
@@ -134,5 +133,5 @@
 /* Print Overrides */
 @media print {
   body { @apply bg-white text-black; }
-  .nav-blur, .ambient-orb { display: none; }
+  .ambient-orb { display: none; }
 }

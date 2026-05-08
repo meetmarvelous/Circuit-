@@ -98,7 +98,7 @@ export default function Navbar() {
                 {isProfileOpen && (
                   <>
                     <div className="fixed inset-0 z-[-1]" onClick={() => setIsProfileOpen(false)} />
-                    <div className="absolute top-[calc(100%+12px)] right-0 w-64 card-glass p-1.5 border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fadeIn">
+                    <div className="absolute top-[calc(100%+12px)] right-0 w-64 card-glass p-1.5 border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fade-in">
                       <div className="px-4 py-3 border-b border-white/[0.08] mb-1">
                         <p className="text-[0.6rem] font-bold text-[#666] uppercase tracking-[0.1em] mb-1">Account ID</p>
                         <p className="text-[0.7rem] font-mono text-[#A3A3A3] break-all">{user?.walletAddress}</p>
