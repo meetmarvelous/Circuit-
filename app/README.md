@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Circuit Frontend (Next.js)
 
-## Getting Started
+This is the core frontend application for the Circuit Protocol, built with Next.js.
 
-First, run the development server:
+## 🚀 Getting Started
 
+### 1. Installation
+Install dependencies from the root directory or the `/app` directory:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Setup
+Create a `.env.local` file based on `.env.example`. Required keys:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `NEXT_PUBLIC_SOLANA_RPC_URL`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Run Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Implementation Details
+- **Simulation Mode**: The app is currently configured to run in simulation mode (`NEXT_PUBLIC_SIMULATION_MODE=true`). This allows for end-to-end testing of the "Invisible Blockchain" flow without requiring actual wallet signatures or SOL on devnet.
+- **State Management**: Uses a custom `AuthProvider` and `WalletProvider` to handle persistent user sessions and simulated wallet mappings.
+- **Routing**:
+  - `/drop`: Product selection and initial order escrow.
+  - `/confirm`: Order confirmation and production initiation.
+  - `/garment/[mint]`: Digital Product Passport interface for garment authentication.
 
-## Learn More
+## 📦 Deployment
+The application is optimized for deployment on **Vercel**.
+- **Root Directory**: `app`
+- **Framework Preset**: Next.js
+- **Environment Variables**: Must be configured in the Vercel dashboard.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+For technical details regarding on-chain integration, refer to the `INTEGRATION.md` file in the project root.

@@ -66,7 +66,8 @@ export default function ConfirmPage() {
   };
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-6 pt-[72px] pb-12 overflow-hidden" aria-label="Confirm Delivery">
+    <section className="min-h-screen flex items-center justify-center px-6 pt-[72px] pb-12" aria-label="Confirm Delivery">
+
       {/* Ambient */}
       <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
         <div className="ambient-orb orb-white" />
@@ -76,7 +77,8 @@ export default function ConfirmPage() {
       <div className="card-glass max-w-[500px] w-full p-8 md:p-12 flex flex-col items-center text-center gap-8 relative z-10" style={{ animation: 'fadeIn 0.6s ease-out' }}>
         {/* Shield Icon */}
         <div className="relative">
-          <div className="absolute inset-[-40%] bg-white/[0.05] blur-[30px] rounded-full animate-pulse" />
+          <div className="absolute inset-0 md:inset-[-40%] bg-white/[0.05] blur-[30px] rounded-full animate-pulse" />
+
           <svg className="w-20 h-20 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />

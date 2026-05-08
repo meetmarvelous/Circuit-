@@ -127,6 +127,7 @@ export default function DropPage() {
 
   return (
     <section className="min-h-[calc(100vh-72px)] flex flex-col pt-[72px]" aria-label="Drop Zero">
+
       {/* Ambient */}
       <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
         <div className="ambient-orb orb-white" />
@@ -150,7 +151,7 @@ export default function DropPage() {
 
           {/* Title */}
           <div className="flex flex-col">
-            <h1 className="text-[3.5rem] md:text-[5.5rem] leading-[0.85] font-bold tracking-[-0.04em] mb-4">
+            <h1 className="text-[3.2rem] md:text-[5.5rem] leading-[0.85] font-bold tracking-[-0.04em] mb-4">
               <span className="block">Drop</span>
               <span className="block bg-gradient-to-b from-white to-[#666] bg-clip-text text-transparent">Zero</span>
             </h1>
@@ -163,20 +164,21 @@ export default function DropPage() {
           </p>
 
           {/* Meta Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-0 border border-white/[0.08] rounded-3xl overflow-hidden bg-white/[0.02] backdrop-blur-sm">
-            <div className="p-5 border-r border-b sm:border-b-0 border-white/[0.08]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-white/[0.08] rounded-3xl overflow-hidden bg-white/[0.02] backdrop-blur-sm">
+            <div className="p-4 md:p-5 border-b sm:border-b-0 sm:border-r border-white/[0.08]">
               <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Edition</span>
               <span className="text-sm font-semibold">01 of {MAX_SUPPLY}</span>
             </div>
-            <div className="p-5 border-r border-b sm:border-b-0 border-white/[0.08]">
+            <div className="p-4 md:p-5 border-b sm:border-b-0 sm:border-r border-white/[0.08]">
               <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Price</span>
               <span className="text-sm font-semibold">{PRICE_DISPLAY}</span>
             </div>
-            <div className="p-5 col-span-2 sm:col-span-1">
+            <div className="p-4 md:p-5">
               <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Fabric</span>
               <span className="text-sm font-semibold">{FABRIC}</span>
             </div>
           </div>
+
 
           {/* Mint Progress */}
           <div className="flex flex-col gap-3">
@@ -262,7 +264,8 @@ export default function DropPage() {
         <div className="order-1 lg:order-2 flex justify-center lg:justify-end" style={{ animation: 'fadeIn 0.8s ease-out 0.2s both' }}>
           <div className="relative w-full max-w-[480px]">
             {/* Glow */}
-            <div className="absolute inset-[-15%] bg-[radial-gradient(circle,rgba(255,255,255,.05)_0%,transparent_70%)] blur-[40px] pointer-events-none" />
+            <div className="absolute inset-0 md:inset-[-15%] bg-[radial-gradient(circle,rgba(255,255,255,.05)_0%,transparent_70%)] blur-[40px] pointer-events-none" />
+
             
             {/* Image Frame */}
             <div className="relative rounded-[32px] overflow-hidden border border-white/[0.12] bg-[#0D0D0D] shadow-[0_30px_100px_rgba(0,0,0,.6)]">
