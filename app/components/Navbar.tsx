@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import SignInModal from './SignInModal';
@@ -21,12 +22,32 @@ export default function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Close drawer on route change
   useEffect(() => {
     setDrawerOpen(false);
     setIsProfileOpen(false);
   }, [pathname]);
+
+  // Handle outside clicks and scroll
+  useEffect(() => {
+    const handleClose = () => setIsProfileOpen(false);
+    
+    if (isProfileOpen) {
+      document.addEventListener('mousedown', (e) => {
+        if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+          handleClose();
+        }
+      });
+      window.addEventListener('scroll', handleClose, { passive: true });
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClose);
+      window.removeEventListener('scroll', handleClose);
+    };
+  }, [isProfileOpen]);
 
   // Lock scroll when drawer is open
   useEffect(() => {
@@ -36,6 +57,7 @@ export default function Navbar() {
       document.body.style.overflow = 'unset';
     }
   }, [drawerOpen]);
+
 
   const activePage = pathname.startsWith('/garment') ? 'garment' :
     pathname.startsWith('/confirm') ? 'confirm' : 'drop';
@@ -83,7 +105,7 @@ export default function Navbar() {
             </div>
 
             {isSignedIn ? (
-              <div className="relative">
+              <div className="relative hidden md:block" ref={profileRef}>
                 <button 
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-white text-black hover:bg-[#D1D1D1] transition-all shadow-[0_4px_20px_rgba(255,255,255,0.1)] group"
@@ -96,31 +118,29 @@ export default function Navbar() {
 
                 {/* Desktop Dropdown - World Class Polish */}
                 {isProfileOpen && (
-                  <>
-                    <div className="fixed inset-0 z-[-1]" onClick={() => setIsProfileOpen(false)} />
-                    <div className="absolute top-[calc(100%+12px)] right-0 w-64 card-glass p-1.5 border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fade-in">
-                      <div className="px-4 py-3 border-b border-white/[0.08] mb-1">
-                        <p className="text-[0.6rem] font-bold text-[#666] uppercase tracking-[0.1em] mb-1">Account ID</p>
-                        <p className="text-[0.7rem] font-mono text-[#A3A3A3] break-all">{user?.walletAddress}</p>
-                      </div>
-                      <button 
-                        onClick={handleExportKey}
-                        className="w-full text-left px-4 py-2.5 text-[0.75rem] font-semibold text-[#A3A3A3] hover:text-white hover:bg-white/[0.05] rounded-xl transition-all flex items-center gap-3"
-                      >
-                        <span className="w-5 flex justify-center">🔑</span>
-                        Export Private Key
-                      </button>
-                      <button 
-                        onClick={() => { signOut(); setIsProfileOpen(false); }}
-                        className="w-full text-left px-4 py-2.5 text-[0.75rem] font-bold text-[#ff5050] hover:bg-[#ff5050]/[0.05] rounded-xl transition-all flex items-center gap-3"
-                      >
-                        <span className="w-5 flex justify-center">🚪</span>
-                        Sign Out
-                      </button>
+                  <div className="absolute top-[calc(100%+12px)] right-0 w-64 card-glass p-1.5 border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fade-in">
+                    <div className="px-4 py-3 border-b border-white/[0.08] mb-1">
+                      <p className="text-[0.6rem] font-bold text-[#666] uppercase tracking-[0.1em] mb-1">Account ID</p>
+                      <p className="text-[0.7rem] font-mono text-[#A3A3A3] break-all">{user?.walletAddress}</p>
                     </div>
-                  </>
+                    <button 
+                      onClick={handleExportKey}
+                      className="w-full text-left px-4 py-2.5 text-[0.75rem] font-semibold text-[#A3A3A3] hover:text-white hover:bg-white/[0.05] rounded-xl transition-all flex items-center gap-3"
+                    >
+                      <span className="w-5 flex justify-center">🔑</span>
+                      Export Private Key
+                    </button>
+                    <button 
+                      onClick={() => { signOut(); setIsProfileOpen(false); }}
+                      className="w-full text-left px-4 py-2.5 text-[0.75rem] font-bold text-[#ff5050] hover:bg-[#ff5050]/[0.05] rounded-xl transition-all flex items-center gap-3"
+                    >
+                      <span className="w-5 flex justify-center">🚪</span>
+                      Sign Out
+                    </button>
+                  </div>
                 )}
               </div>
+
             ) : (
               <button 
                 onClick={() => setIsSignInOpen(true)}
