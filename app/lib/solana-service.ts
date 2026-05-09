@@ -26,7 +26,7 @@ import {
   MAX_SUPPLY,
   PRODUCTION_DATE,
   FABRIC,
-  CAP,
+  HEADPIECE,
   EMBROIDERY,
   BRAND,
   DEMO_START_COUNT,
@@ -405,7 +405,7 @@ export async function fetchPassportData(mintAddress?: string): Promise<PassportD
     dropId:         attrs['Drop']            ?? DROP_ID,
     productionDate: attrs['Production Date'] ?? PRODUCTION_DATE,
     fabric:         attrs['Fabric']          ?? FABRIC,
-    cap:            attrs['Cap']             ?? CAP,
+    cap:            attrs['Cap']             ?? HEADPIECE,
     embroidery:     attrs['Embroidery']      ?? EMBROIDERY,
     owner:          mint,
 

@@ -51,9 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser({
             email: savedEmail,
             walletAddress: wallet.publicKey,
-            privateKey: 'SECURED_BY_INFRASTRUCTURE', // Real key is in backend
+            privateKey: 'SECURED_BY_INFRASTRUCTURE',
             isSignedIn: true
           });
+        } else {
+          // If backend doesn't have it, we must have been in simulation mode.
+          // Clear it to force a fresh, real sign-in.
+          localStorage.removeItem('circuit_active_email');
+          setUser(null);
         }
         setIsInitializing(false);
       }).catch(() => {

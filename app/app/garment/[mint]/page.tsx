@@ -65,7 +65,7 @@ export default function GarmentPassportPage() {
       {/* Header */}
       <header className="section-container pt-12 md:pt-20 text-center relative z-10" style={{ animation: 'fadeIn 0.5s ease-out' }}>
         <span className="inline-block px-4 py-1.5 rounded-full text-[0.6rem] font-bold uppercase tracking-[0.12em] border border-white/10 bg-white/[0.03] text-[#A3A3A3] mb-6">
-          Digital Product Passport
+          Garment passport
         </span>
         <h1 className="text-4xl md:text-6xl font-bold tracking-[-0.04em] mb-6">Authentic Record</h1>
         <p className="text-sm md:text-base text-[#666] max-w-[540px] mx-auto leading-relaxed">
@@ -110,9 +110,9 @@ export default function GarmentPassportPage() {
               {[
                 { k: 'Collection', v: 'Drop Zero' },
                 { k: 'Main Fabric', v: passport.fabric },
-                { k: 'Cap', v: passport.cap },
+                { k: 'Headpiece', v: passport.cap },
                 { k: 'Embroidery', v: passport.embroidery },
-                { k: 'Origin', v: 'Nigeria' },
+                { k: 'Origin', v: 'Made in Nigeria' },
 
                 { k: 'Produced', v: passport.productionDate },
 
@@ -125,9 +125,9 @@ export default function GarmentPassportPage() {
             </div>
           </div>
 
-          {/* On-Chain Verification */}
+          {/* Garment record */}
           <div>
-            <h3 className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#444] mb-4">On-Chain Verification</h3>
+            <h3 className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#444] mb-4">Garment record</h3>
             <div className="card-glass overflow-hidden">
               {[
                 { k: 'Owner', v: truncateAddress(passport.owner), mono: true },

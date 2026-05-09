@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
 // ── Supabase Configuration ───────────────────────────────────────────
-// These will be replaced with real keys in Vercel/Production
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
+
+if (typeof window !== 'undefined') {
+  if (!supabaseUrl) console.warn('⚠️ Supabase: NEXT_PUBLIC_SUPABASE_URL is missing.');
+  if (!supabaseAnonKey) console.warn('⚠️ Supabase: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing.');
+  if (supabaseAnonKey && !supabaseAnonKey.startsWith('ey')) {
+    console.warn('⚠️ Supabase: The Anon Key looks invalid (expected a JWT starting with "ey").');
+  }
+}
 
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey)
@@ -40,7 +47,9 @@ export async function saveUserMapping(email: string, walletAddress: string, priv
       .upsert({ email, wallet_address: walletAddress, private_key: privateKey }, { onConflict: 'email' })
       .select();
     
-    if (error) console.error('Supabase Error:', error);
+    if (error) {
+      console.error('Supabase Mapping Error:', JSON.stringify(error, null, 2));
+    }
     return data;
   }
 
@@ -84,7 +93,14 @@ export async function saveOrder(orderData: {
       .from('orders')
       .insert([orderData]);
     
-    if (error) console.error('Supabase Order Error:', error);
+    if (error) {
+      console.error('Supabase Order Error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+    }
     return data;
   }
 

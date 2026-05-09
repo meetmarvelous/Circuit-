@@ -41,7 +41,5 @@ export const BRAND = {
 export const DESIGNER_PUBKEY = 'Marv...Design...Key';
 export const PRODUCTION_DATE = 'October 2026';
 export const FABRIC = 'Duchess satin';
-export const CAP = 'Velvet';
+export const HEADPIECE = 'Velvet';
 export const EMBROIDERY = 'Metallic thread';
-
-

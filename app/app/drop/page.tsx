@@ -18,7 +18,7 @@ import {
   PRICE_DISPLAY,
   MAX_SUPPLY,
   FABRIC,
-  CAP,
+  HEADPIECE,
   EMBROIDERY,
   GARMENT_MINT,
 } from '@/lib/constants';
@@ -153,22 +153,21 @@ export default function DropPage() {
               Limited Edition
             </span>
             <span className="px-3 py-1 rounded-full text-[0.65rem] font-bold uppercase tracking-[0.08em] bg-white/[0.04] border border-white/[0.08] text-[#666]">
-              Verified Origin
+              Made in Nigeria
             </span>
           </div>
 
           {/* Title */}
           <div className="flex flex-col">
-            <h1 className="text-[3.2rem] md:text-[5.5rem] leading-[0.85] font-bold tracking-[-0.04em] mb-4">
+            <h1 className="text-[3.5rem] md:text-[5.5rem] leading-[0.85] font-bold tracking-[-0.04em] mb-4">
               <span className="block">Drop</span>
               <span className="block bg-gradient-to-b from-white to-[#666] bg-clip-text text-transparent">Zero</span>
             </h1>
-            <h2 className="text-[1.8rem] md:text-[2.2rem] font-light text-[#A3A3A3] tracking-[-0.02em]">The Wrap Dress</h2>
+            <h2 className="text-[1.8rem] md:text-[2.2rem] font-light text-[#A3A3A3] tracking-[-0.02em]">3 Piece Agbada</h2>
           </div>
 
           <p className="text-[0.95rem] text-[#A3A3A3] leading-[1.8] max-w-[540px]">
-            Made-to-order infrastructure. Nothing is manufactured until you confirm.
-            Your payment is held in trustless escrow — secured by code.
+            Made-to-order: Once you confirm receipt, your payment will be released from escrow to the designer.
           </p>
 
           {/* Meta Grid */}
@@ -186,8 +185,8 @@ export default function DropPage() {
               <span className="text-sm font-semibold">{FABRIC}</span>
             </div>
             <div className="p-4 md:p-5 border-r border-white/[0.08]">
-              <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Cap</span>
-              <span className="text-sm font-semibold">{CAP}</span>
+              <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Headpiece</span>
+              <span className="text-sm font-semibold">{HEADPIECE}</span>
             </div>
             <div className="p-4 md:p-5">
               <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Embroidery</span>
@@ -296,7 +295,7 @@ export default function DropPage() {
                   src="/satin.png"
 
 
-                alt="Circuit Wrap Dress"
+                alt="3 Piece Agbada"
                 width={600}
                 height={720}
                 className="w-full h-auto object-cover scale-[1.01]"
@@ -305,8 +304,9 @@ export default function DropPage() {
               
 
 
-              <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-[20px] rounded-full px-4 py-2 text-[0.65rem] font-mono font-bold border border-white/[0.12]">
-                {loading ? '—' : mintedCount} / {MAX_SUPPLY}
+              <div className="absolute bottom-6 left-6 flex items-center gap-2 bg-black/60 backdrop-blur-[20px] rounded-full px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.1em] border border-white/[0.12]">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse shadow-[0_0_8px_white]" />
+                3 Piece Agbada
               </div>
             </div>
           </div>
@@ -318,13 +318,13 @@ export default function DropPage() {
         <div className="section-container">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-0">
             {[
-              { num: '01', title: 'Secured Payment', desc: 'Atomic escrow locking', icon: (
+              { num: '01', title: 'Secured Payment', desc: 'Payment protected until delivery confirmation.', icon: (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="6" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg>
               )},
               { num: '02', title: 'Ethical Production', desc: 'Garment is made-to-order', icon: (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
               )},
-              { num: '03', title: 'Proof of Life', desc: 'Digital Passport generated', icon: (
+              { num: '03', title: 'Garment passport', desc: 'Digital Passport generated', icon: (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
               )},
             ].map((step, i) => (
