@@ -26,9 +26,14 @@ import {
   MAX_SUPPLY,
   PRODUCTION_DATE,
   FABRIC,
+  CAP,
+  EMBROIDERY,
   BRAND,
   DEMO_START_COUNT,
+  RPC_ENDPOINT,
 } from './constants';
+
+
 
 import { Connection, clusterApiUrl, PublicKey } from '@solana/web3.js';
 import { Program, AnchorProvider, type Idl } from '@coral-xyz/anchor';
@@ -95,7 +100,10 @@ export interface PassportData {
   dropId: string;
   productionDate: string;
   fabric: string;
+  cap: string;
+  embroidery: string;
   owner: string;
+
   creator: string;
   symbol: string;
   royaltyBps: number;
@@ -195,7 +203,8 @@ const ESCROW_IDL = {
 // ── Anchor provider (read-only, for data fetching) ───────────────────
 
 function makeReadOnlyProvider(): AnchorProvider {
-  const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+  const connection = new Connection(RPC_ENDPOINT, 'confirmed');
+
   return new AnchorProvider(
     connection,
     {
@@ -374,7 +383,8 @@ export async function fetchEscrowStatus(
  */
 export async function fetchPassportData(mintAddress?: string): Promise<PassportData> {
   const mint = mintAddress || GARMENT_MINT;
-  const umi  = createUmi('https://api.devnet.solana.com').use(mplTokenMetadata());
+  const umi  = createUmi(RPC_ENDPOINT).use(mplTokenMetadata());
+
   const asset = await fetchDigitalAsset(umi, umiPublicKey(mint));
   const meta  = asset.metadata;
 
@@ -395,7 +405,10 @@ export async function fetchPassportData(mintAddress?: string): Promise<PassportD
     dropId:         attrs['Drop']            ?? DROP_ID,
     productionDate: attrs['Production Date'] ?? PRODUCTION_DATE,
     fabric:         attrs['Fabric']          ?? FABRIC,
+    cap:            attrs['Cap']             ?? CAP,
+    embroidery:     attrs['Embroidery']      ?? EMBROIDERY,
     owner:          mint,
+
     creator:        BRAND.name,
     symbol:         meta.symbol,
     royaltyBps,

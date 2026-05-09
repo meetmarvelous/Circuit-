@@ -44,16 +44,17 @@
 
   /* ── Cards & Glass ────────────────────────────────────────────────── */
   .card-glass {
-    @apply border border-white/[0.08] rounded-[24px] transition-all duration-300;
-    background: rgba(13, 13, 13, 0.85);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    @apply border border-white/[0.1] rounded-[24px] transition-all duration-300;
+    background: rgba(10, 10, 10, 0.98);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
   }
 
   .card-glass:hover {
-    @apply border-white/[0.16] shadow-[0_20px_50px_rgba(0,0,0,0.4)];
-    background: rgba(20, 20, 20, 0.95);
+    @apply border-white/[0.18] shadow-[0_30px_60px_rgba(0,0,0,0.8)];
+    background: rgba(15, 15, 15, 1);
   }
+
 
 
   /* ── Premium Buttons ──────────────────────────────────────────────── */

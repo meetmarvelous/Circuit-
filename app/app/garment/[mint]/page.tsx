@@ -110,9 +110,12 @@ export default function GarmentPassportPage() {
               {[
                 { k: 'Collection', v: 'Drop Zero' },
                 { k: 'Main Fabric', v: passport.fabric },
+                { k: 'Cap', v: passport.cap },
+                { k: 'Embroidery', v: passport.embroidery },
+                { k: 'Origin', v: 'Nigeria' },
 
-                { k: 'Origin', v: 'Circuit Studio — Lagos' },
                 { k: 'Produced', v: passport.productionDate },
+
               ].map((row, i, arr) => (
                 <div key={row.k} className={`flex justify-between items-center p-5 text-sm ${i < arr.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
                   <span className="text-[#666] font-medium">{row.k}</span>

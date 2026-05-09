@@ -18,8 +18,11 @@ import {
   PRICE_DISPLAY,
   MAX_SUPPLY,
   FABRIC,
+  CAP,
+  EMBROIDERY,
   GARMENT_MINT,
 } from '@/lib/constants';
+
 import { solscanTxUrl } from '@/lib/utils';
 import { showToast } from '@/components/Toast';
 import SignInModal from '@/components/SignInModal';
@@ -169,21 +172,29 @@ export default function DropPage() {
           </p>
 
           {/* Meta Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-white/[0.08] rounded-3xl overflow-hidden bg-white/[0.02] backdrop-blur-sm">
-            <div className="p-4 md:p-5 border-b sm:border-b-0 sm:border-r border-white/[0.08]">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-0 border border-white/[0.08] rounded-3xl overflow-hidden bg-white/[0.02] backdrop-blur-sm">
+            <div className="p-4 md:p-5 border-r border-b sm:border-b-0 border-white/[0.08]">
               <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Edition</span>
               <span className="text-sm font-semibold">01 of {MAX_SUPPLY}</span>
             </div>
-            <div className="p-4 md:p-5 border-b sm:border-b-0 sm:border-r border-white/[0.08]">
+            <div className="p-4 md:p-5 border-r border-b sm:border-b-0 border-white/[0.08]">
               <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Price</span>
               <span className="text-sm font-semibold">{PRICE_DISPLAY}</span>
             </div>
-            <div className="p-4 md:p-5">
+            <div className="p-4 md:p-5 border-r border-white/[0.08]">
               <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Main Fabric</span>
               <span className="text-sm font-semibold">{FABRIC}</span>
             </div>
-
+            <div className="p-4 md:p-5 border-r border-white/[0.08]">
+              <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Cap</span>
+              <span className="text-sm font-semibold">{CAP}</span>
+            </div>
+            <div className="p-4 md:p-5">
+              <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Embroidery</span>
+              <span className="text-sm font-semibold">{EMBROIDERY}</span>
+            </div>
           </div>
+
 
 
           {/* Selection */}
