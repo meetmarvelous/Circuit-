@@ -70,8 +70,9 @@ async function createWallet(userId) {
   // Load deployer keypair - try env var first (Railway), then file (local)
   let deployerKeypair;
   if (process.env.DEPLOYER_KEYPAIR) {
-    const secretKey = JSON.parse(Buffer.from(process.env.DEPLOYER_KEYPAIR, 'base64').toString());
-    deployerKeypair = Keypair.fromSecretKey(Uint8Array.from(secretKey));
+    deployerKeypair = Keypair.fromSecretKey(
+      Buffer.from(process.env.DEPLOYER_KEYPAIR, 'base64')
+    );
   } else {
     const keypairData = JSON.parse(fs.readFileSync(os.homedir() + '/.config/solana/id.json', 'utf-8'));
     deployerKeypair = Keypair.fromSecretKey(Uint8Array.from(keypairData));
