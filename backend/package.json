@@ -1,6 +1,9 @@
 {
   "name": "circuit-backend",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "description": "Circuit custodial wallet + transaction service",
   "main": "src/server.js",
   "scripts": {
