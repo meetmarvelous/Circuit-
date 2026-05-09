@@ -82,7 +82,7 @@ async function createWallet(userId) {
     SystemProgram.transfer({
       fromPubkey: deployerKeypair.publicKey,
       toPubkey:   keypair.publicKey,
-      lamports:   3 * LAMPORTS_PER_SOL,
+      lamports:   2 * LAMPORTS_PER_SOL,
     })
   );
 
