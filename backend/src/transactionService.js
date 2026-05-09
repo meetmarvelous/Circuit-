@@ -123,8 +123,10 @@ function deriveDropPDA(dropId) {
 // ── Transactions ──────────────────────────────────────────────────────────────
 
 /**
- * Lock amountSol in escrow on behalf of userId.
- * Returns { signature, escrowPDA, buyer }.
+ * Lock amountSol in escrow, then increment the drop supply counter.
+ * If register_order fails (e.g. DropSoldOut), the escrow already exists
+ * on-chain — the error is re-thrown so the caller can surface it.
+ * Returns { signature, registerSignature, escrowPDA, buyer, amountSol }.
  */
 async function initializeEscrow(userId, dropId, amountSol) {
   const keypair  = getKeypair(userId);
@@ -134,7 +136,8 @@ async function initializeEscrow(userId, dropId, amountSol) {
   const [escrowPda] = deriveEscrowPDA(dropId, keypair.publicKey);
   const lamports    = Math.round(amountSol * LAMPORTS_PER_SOL);
 
-  const sig = await program.methods
+  // Step 1: Lock payment in escrow
+  const escrowSig = await program.methods
     .initializeEscrow(dropId, new anchor.BN(lamports))
     .accounts({
       buyer:         keypair.publicKey,
@@ -144,10 +147,14 @@ async function initializeEscrow(userId, dropId, amountSol) {
     })
     .rpc();
 
+  // Step 2: Increment supply counter — throws if drop is sold out
+  const { signature: registerSig } = await registerOrder(userId, dropId);
+
   return {
-    signature: sig,
-    escrowPDA: escrowPda.toBase58(),
-    buyer:     keypair.publicKey.toBase58(),
+    signature:         escrowSig,
+    registerSignature: registerSig,
+    escrowPDA:         escrowPda.toBase58(),
+    buyer:             keypair.publicKey.toBase58(),
     amountSol,
   };
 }
