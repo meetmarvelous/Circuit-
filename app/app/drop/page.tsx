@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { useAuth } from '@/lib/auth-context';
 import {
   initializeEscrow,
@@ -38,6 +39,7 @@ interface TxResult {
 }
 
 export default function DropPage() {
+  const wallet = useWallet();
   const { user, isSignedIn } = useAuth();
   const [mintedCount, setMintedCount] = useState(0);
   const [txState, setTxState] = useState<TxState>('idle');
@@ -70,11 +72,7 @@ export default function DropPage() {
 
     try {
       // 1. Solana Handshake
-      const result = await initializeEscrow(
-        DROP_ID,
-        PRICE_SOL,
-        user?.walletAddress
-      );
+      const result = await initializeEscrow(wallet, DROP_ID, PRICE_SOL);
 
       // 2. Persist to DB
       if (user?.email) {

@@ -30,6 +30,12 @@ import {
   DEMO_START_COUNT,
 } from './constants';
 
+import { Connection, clusterApiUrl, PublicKey, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Program, AnchorProvider, BN, type Idl } from '@coral-xyz/anchor';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import { mplTokenMetadata, fetchDigitalAsset } from '@metaplex-foundation/mpl-token-metadata';
+import { publicKey as umiPublicKey } from '@metaplex-foundation/umi';
+
 import {
   genAddress,
   genSignature,
@@ -106,6 +112,108 @@ export interface CircuitError {
   program?: string;
 }
 
+// ── Anchor IDLs (minimal — read-only account fetching) ───────────────
+
+const DROPS_IDL = {
+  address:      DROPS_PROGRAM_ID,
+  metadata:     { name: 'circuit_drops', version: '0.1.0', spec: '0.1.0' },
+  instructions: [{
+    name:          'register_order',
+    discriminator: [92, 37, 29, 46, 77, 250, 219, 6],
+    accounts: [
+      { name: 'authority',   signer: true              },
+      { name: 'drop_account', writable: true            },
+    ],
+    args: [],
+  }],
+  accounts:     [{ name: 'DropAccount', discriminator: [173, 242, 121, 245, 229, 150, 14, 87] }],
+  types: [{
+    name: 'DropAccount',
+    type: {
+      kind: 'struct',
+      fields: [
+        { name: 'designer',      type: 'pubkey' },
+        { name: 'max_supply',    type: 'u64'    },
+        { name: 'current_count', type: 'u64'    },
+        { name: 'drop_id',       type: 'string' },
+        { name: 'active',        type: 'bool'   },
+        { name: 'bump',          type: 'u8'     },
+      ],
+    },
+  }],
+  errors: [],
+} as unknown as Idl;
+
+const ESCROW_IDL = {
+  address:      ESCROW_PROGRAM_ID,
+  metadata:     { name: 'circuit_escrow', version: '0.1.0', spec: '0.1.0' },
+  instructions: [
+    {
+      name:          'initialize_escrow',
+      discriminator: [243, 160, 77, 153, 11, 92, 48, 209],
+      accounts: [
+        { name: 'buyer',          writable: true, signer: true },
+        { name: 'designer'                                      },
+        { name: 'escrow_account', writable: true               },
+        { name: 'system_program', address: '11111111111111111111111111111111' },
+      ],
+      args: [
+        { name: 'drop_id', type: 'string' },
+        { name: 'amount',  type: 'u64'    },
+      ],
+    },
+    {
+      name:          'confirm_delivery',
+      discriminator: [11, 109, 227, 53, 179, 190, 88, 155],
+      accounts: [
+        { name: 'buyer',          writable: true, signer: true },
+        { name: 'designer',       writable: true               },
+        { name: 'escrow_account', writable: true               },
+      ],
+      args: [],
+    },
+  ],
+  accounts:     [{ name: 'EscrowAccount', discriminator: [36, 69, 48, 18, 128, 225, 125, 135] }],
+  types: [{
+    name: 'EscrowAccount',
+    type: {
+      kind: 'struct',
+      fields: [
+        { name: 'buyer',     type: 'pubkey' },
+        { name: 'designer',  type: 'pubkey' },
+        { name: 'amount',    type: 'u64'    },
+        { name: 'drop_id',   type: 'string' },
+        { name: 'delivered', type: 'bool'   },
+        { name: 'bump',      type: 'u8'     },
+      ],
+    },
+  }],
+  errors: [],
+} as unknown as Idl;
+
+// Hardcoded for demo — replace with on-chain designer registry lookup for production
+const LIVE_DESIGNER_PUBKEY = '9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin';
+
+// ── Anchor providers ─────────────────────────────────────────────────
+
+function makeReadOnlyProvider(): AnchorProvider {
+  const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+  return new AnchorProvider(
+    connection,
+    {
+      publicKey:           PublicKey.default,
+      signTransaction:     async <T>(tx: T): Promise<T> => tx,
+      signAllTransactions: async <T>(txs: T[]): Promise<T[]> => txs,
+    },
+    { commitment: 'confirmed' }
+  );
+}
+
+function makeLiveProvider(wallet: any): AnchorProvider {
+  const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+  return new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
+}
+
 // ── Internal State ───────────────────────────────────────────────────
 let _currentCount = DEMO_START_COUNT;
 
@@ -116,13 +224,11 @@ let _currentCount = DEMO_START_COUNT;
  * Seeds: ["escrow", dropId, buyerPubkey]
  * See INTEGRATION.md §7
  */
-export function deriveEscrowPDA(dropId: string, buyerPubkey: string): string {
-  if (SIMULATION_MODE) return genAddress();
-  // TODO: Replace with PublicKey.findProgramAddressSync(
-  //   [Buffer.from("escrow"), Buffer.from(dropId), buyerPubkey.toBuffer()],
-  //   new PublicKey(ESCROW_PROGRAM_ID)
-  // );
-  throw new Error('Live mode not implemented — see INTEGRATION.md §7');
+export function deriveEscrowPDA(dropId: string, buyerPubkey: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('escrow'), Buffer.from(dropId), buyerPubkey.toBuffer()],
+    new PublicKey(ESCROW_PROGRAM_ID)
+  );
 }
 
 /**
@@ -130,185 +236,222 @@ export function deriveEscrowPDA(dropId: string, buyerPubkey: string): string {
  * Seeds: ["drop", dropId]
  * See INTEGRATION.md §7
  */
-export function deriveDropPDA(dropId: string): string {
-  if (SIMULATION_MODE) return genAddress();
-  // TODO: Replace with PublicKey.findProgramAddressSync(
-  //   [Buffer.from("drop"), Buffer.from(dropId)],
-  //   new PublicKey(DROPS_PROGRAM_ID)
-  // );
-  throw new Error('Live mode not implemented — see INTEGRATION.md §7');
+export function deriveDropPDA(dropId: string): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('drop'), Buffer.from(dropId)],
+    new PublicKey(DROPS_PROGRAM_ID)
+  );
 }
 
 // ── Core Transactions ────────────────────────────────────────────────
 
 /**
- * Place order: register on Drop Registry + lock payment in escrow.
- * Maps to INTEGRATION.md §9: placeOrder() sequence.
+ * Lock buyer's payment in the on-chain escrow.
+ * Maps to INTEGRATION.md §4.1: initialize_escrow.
  */
 export async function initializeEscrow(
+  wallet: any,
   dropId: string,
-  amountSol: number,
-  buyerPubkey?: string
+  amount: number,
 ): Promise<EscrowResult> {
-  if (SIMULATION_MODE) {
-    await randomDelay(1200, 2200);
+  const [escrowPda] = deriveEscrowPDA(dropId, wallet.publicKey as PublicKey);
+  const program    = new Program(ESCROW_IDL, makeLiveProvider(wallet));
 
-    if (_currentCount >= MAX_SUPPLY) {
-      const err: CircuitError = {
-        code: 'DropSoldOut',
-        errorCode: 6000,
-        message: `Drop has reached maximum supply of ${MAX_SUPPLY}. No more orders can be registered.`,
-        program: 'circuit_drops',
-      };
-      throw err;
-    }
+  const sig = await program.methods
+    .initializeEscrow(dropId, new BN(Math.round(amount * LAMPORTS_PER_SOL)))
+    .accounts({
+      buyer:         wallet.publicKey,
+      designer:      new PublicKey(LIVE_DESIGNER_PUBKEY),
+      escrowAccount: escrowPda,
+      systemProgram: SystemProgram.programId,
+    })
+    .rpc();
 
-    _currentCount++;
-    const sig = genSignature();
-    const escrowPDA = deriveEscrowPDA(dropId, buyerPubkey || genAddress());
+  const drop = await fetchDropData(dropId).catch(() => ({ currentCount: 0, maxSupply: MAX_SUPPLY }));
 
-    return {
-      success: true,
-      orderNumber: _currentCount,
-      currentCount: _currentCount,
-      maxSupply: MAX_SUPPLY,
-      txSignature: sig,
-      escrowPDA,
-      solscanUrl: solscanTxUrl(sig),
-    };
-  }
-
-  // TODO: see INTEGRATION.md §9
-  throw new Error('Live mode not implemented');
+  return {
+    success:      true,
+    orderNumber:  drop.currentCount,
+    currentCount: drop.currentCount,
+    maxSupply:    drop.maxSupply,
+    txSignature:  sig,
+    escrowPDA:    escrowPda.toBase58(),
+    solscanUrl:   solscanTxUrl(sig),
+  };
 }
 
 /**
- * Register order on-chain (increment supply counter).
+ * Increment the on-chain supply counter on circuit_drops.
  * Maps to INTEGRATION.md §5.2: register_order.
  */
-export async function registerOrder(dropId: string): Promise<OrderResult> {
-  if (SIMULATION_MODE) {
-    await randomDelay(800, 1500);
+export async function registerOrder(
+  wallet: any,
+  dropId: string,
+): Promise<OrderResult> {
+  const [dropPda] = deriveDropPDA(dropId);
+  const program   = new Program(DROPS_IDL, makeLiveProvider(wallet));
 
-    if (_currentCount >= MAX_SUPPLY) {
-      const err: CircuitError = {
-        code: 'DropSoldOut',
+  let sig: string;
+  try {
+    sig = await program.methods
+      .registerOrder()
+      .accounts({
+        authority:   wallet.publicKey,
+        dropAccount: dropPda,
+      })
+      .rpc();
+  } catch (err) {
+    const msg = String(err);
+    if (msg.includes('DropSoldOut') || msg.includes('6000')) {
+      const e: CircuitError = {
+        code:      'DropSoldOut',
         errorCode: 6000,
-        message: 'This drop is sold out.',
-        program: 'circuit_drops',
+        message:   'This drop is sold out.',
+        program:   'circuit_drops',
       };
-      throw err;
+      throw e;
     }
-
-    _currentCount++;
-    const sig = genSignature();
-
-    return {
-      success: true,
-      orderNumber: _currentCount,
-      currentCount: _currentCount,
-      maxSupply: MAX_SUPPLY,
-      txSignature: sig,
-    };
+    throw err;
   }
 
-  throw new Error('Live mode not implemented');
+  const drop = await fetchDropData(dropId).catch(() => ({ currentCount: 0, maxSupply: MAX_SUPPLY }));
+
+  return {
+    success:      true,
+    orderNumber:  drop.currentCount,
+    currentCount: drop.currentCount,
+    maxSupply:    drop.maxSupply,
+    txSignature:  sig,
+  };
 }
 
 /**
- * Confirm delivery — release escrowed funds to designer.
+ * Release escrowed funds to the designer after delivery is confirmed.
+ * Fetches the designer address from the live escrow account first.
  * Maps to INTEGRATION.md §4.2: confirm_delivery.
  */
 export async function confirmDelivery(
-  escrowPDA: string,
+  wallet: any,
   dropId: string,
-  buyerPubkey?: string
 ): Promise<DeliveryResult> {
-  if (SIMULATION_MODE) {
-    await randomDelay(1500, 2500);
+  const [escrowPda] = deriveEscrowPDA(dropId, wallet.publicKey as PublicKey);
 
-    const sig = genSignature();
-    return {
-      success: true,
-      txSignature: sig,
-      fundsReleased: PRICE_SOL,
-      designerAddress: DESIGNER_PUBKEY,
-      solscanUrl: solscanTxUrl(sig),
-    };
-  }
+  const escrow = await fetchEscrowStatus(dropId, wallet.publicKey as PublicKey);
+  if (!escrow) throw new Error('Escrow not found — order may not have been placed yet.');
 
-  throw new Error('Live mode not implemented');
+  const program = new Program(ESCROW_IDL, makeLiveProvider(wallet));
+
+  const sig = await program.methods
+    .confirmDelivery()
+    .accounts({
+      buyer:         wallet.publicKey,
+      designer:      new PublicKey(escrow.designer),
+      escrowAccount: escrowPda,
+    })
+    .rpc();
+
+  return {
+    success:         true,
+    txSignature:     sig,
+    fundsReleased:   escrow.amount,
+    designerAddress: escrow.designer,
+    solscanUrl:      solscanTxUrl(sig),
+  };
 }
 
 // ── Data Fetching ────────────────────────────────────────────────────
 
 /**
- * Fetch current drop data.
+ * Fetch current drop data directly from the circuit_drops program.
  * Maps to INTEGRATION.md §5.3: fetchDrop.
  */
 export async function fetchDropData(dropId?: string): Promise<DropData> {
-  if (SIMULATION_MODE) {
-    await randomDelay(400, 800);
+  const id = dropId || DROP_ID;
+  const [dropPda] = deriveDropPDA(id);
+  const program = new Program(DROPS_IDL, makeReadOnlyProvider());
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await (program.account as any)['dropAccount'].fetch(dropPda) as Record<string, unknown>;
     return {
-      dropId: dropId || DROP_ID,
-      maxSupply: MAX_SUPPLY,
-      currentCount: _currentCount,
-      active: true,
-      designerPubkey: DESIGNER_PUBKEY,
+      dropId:         data['dropId']       as string,
+      maxSupply:      (data['maxSupply']    as { toNumber(): number }).toNumber(),
+      currentCount:   (data['currentCount'] as { toNumber(): number }).toNumber(),
+      active:         data['active']        as boolean,
+      designerPubkey: (data['designer']     as PublicKey).toBase58(),
     };
+  } catch (err) {
+    if (String(err).includes('Account does not exist')) throw new Error(`Drop not found: ${id}`);
+    throw err;
   }
-  throw new Error('Live mode not implemented');
 }
 
 /**
- * Fetch escrow account status.
+ * Fetch escrow account status directly from the circuit_escrow program.
+ * Returns null if the escrow has not been initialized yet.
  * Maps to INTEGRATION.md §4.3: fetchEscrow.
  */
 export async function fetchEscrowStatus(
-  escrowPDA: string,
-  dropId?: string,
-  buyerPubkey?: string
+  dropId: string,
+  buyerPubkey: PublicKey,
 ): Promise<EscrowStatus | null> {
-  if (SIMULATION_MODE) {
-    await randomDelay(300, 600);
+  const [escrowPda] = deriveEscrowPDA(dropId, buyerPubkey);
+  const program = new Program(ESCROW_IDL, makeReadOnlyProvider());
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await (program.account as any)['escrowAccount'].fetch(escrowPda) as Record<string, unknown>;
     return {
-      buyer: buyerPubkey || genAddress(),
-      designer: DESIGNER_PUBKEY,
-      amount: PRICE_SOL,
-      delivered: false,
-      dropId: dropId || DROP_ID,
+      buyer:     (data['buyer']    as PublicKey).toBase58(),
+      designer:  (data['designer'] as PublicKey).toBase58(),
+      amount:    (data['amount']   as { toNumber(): number }).toNumber() / 1e9, // lamports → SOL
+      delivered:  data['delivered'] as boolean,
+      dropId:     data['dropId']    as string,
     };
+  } catch (err) {
+    if (String(err).includes('Account does not exist')) return null;
+    throw err;
   }
-  throw new Error('Live mode not implemented');
 }
 
 /**
- * Fetch passport/NFT metadata.
+ * Fetch garment passport data from Metaplex (on-chain) + off-chain JSON.
+ * Metaplex pads on-chain names with null bytes — these are stripped.
  * Maps to INTEGRATION.md §6.1: fetchGarmentMetadata.
  */
 export async function fetchPassportData(mintAddress?: string): Promise<PassportData> {
-  if (SIMULATION_MODE) {
-    await randomDelay(500, 1000);
-    const mint = mintAddress || GARMENT_MINT;
-    return {
-      garmentName: 'Circuit Drop Zero — Wrap Dress',
-      edition: '01',
+  const mint = mintAddress || GARMENT_MINT;
+  const umi  = createUmi('https://api.devnet.solana.com').use(mplTokenMetadata());
+  const asset = await fetchDigitalAsset(umi, umiPublicKey(mint));
+  const meta  = asset.metadata;
 
-      dropId: DROP_ID,
-      productionDate: PRODUCTION_DATE,
-      fabric: FABRIC,
-      owner: genAddress(),
-      creator: BRAND.name,
-      symbol: BRAND.symbol,
-      royaltyBps: BRAND.royaltyBps,
-      royaltyPercent: BRAND.royaltyPercent,
-      mintAddress: mint,
-      isMutable: false,
-      standard: 'Programmable Non-Fungible',
-      solscanUrl: solscanTokenUrl(mint),
-    };
+  // Pull attributes from off-chain JSON when a real URI is available
+  const attrs: Record<string, string> = {};
+  if (meta.uri && !meta.uri.includes('placeholder')) {
+    try {
+      const res  = await fetch(meta.uri);
+      const json = await res.json() as { attributes?: { trait_type: string; value: string }[] };
+      for (const a of (json.attributes ?? [])) attrs[a.trait_type] = a.value;
+    } catch { /* fallback to constants below */ }
   }
-  throw new Error('Live mode not implemented');
+
+  const royaltyBps = meta.sellerFeeBasisPoints;
+  return {
+    garmentName:    meta.name.replace(/\0/g, '').trim(),
+    edition:        attrs['Edition']         ?? '01',
+    dropId:         attrs['Drop']            ?? DROP_ID,
+    productionDate: attrs['Production Date'] ?? PRODUCTION_DATE,
+    fabric:         attrs['Fabric']          ?? FABRIC,
+    owner:          mint,
+    creator:        BRAND.name,
+    symbol:         meta.symbol,
+    royaltyBps,
+    royaltyPercent: `${royaltyBps / 100}%`,
+    mintAddress:    mint,
+    isMutable:      meta.isMutable,
+    standard:       'Programmable Non-Fungible',
+    solscanUrl:     solscanTokenUrl(mint),
+  };
 }
 
 // ── Error Parser ─────────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { useAuth } from '@/lib/auth-context';
 import { confirmDelivery, parseError } from '@/lib/solana-service';
 import { DROP_ID, MAX_SUPPLY, GARMENT_MINT } from '@/lib/constants';
@@ -21,6 +22,7 @@ interface TxResult {
 }
 
 export default function ConfirmPage() {
+  const wallet = useWallet();
   const { user, isSignedIn } = useAuth();
   const [txState, setTxState] = useState<TxState>('idle');
   const [txResult, setTxResult] = useState<TxResult>({});
@@ -40,11 +42,7 @@ export default function ConfirmPage() {
     setTxResult({});
 
     try {
-      const result = await confirmDelivery(
-        'simulation-pda',
-        DROP_ID,
-        user?.walletAddress
-      );
+      const result = await confirmDelivery(wallet, DROP_ID);
 
       await updateOrderStatus(result.txSignature, 'delivered');
 
