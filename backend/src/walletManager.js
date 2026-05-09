@@ -18,6 +18,11 @@ const os   = require('os');
 const SECRET_KEY = process.env.SECRET_KEY;
 if (!SECRET_KEY) throw new Error('SECRET_KEY is not set in environment');
 
+const dataDir = path.join(__dirname, '../data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
 const db = new DatabaseSync(path.join(__dirname, '../data/wallets.db'));
 
 db.exec(`
