@@ -295,10 +295,7 @@ export default function DropPage() {
                 priority
               />
               
-              <div className="absolute bottom-6 left-6 flex items-center gap-2 bg-black/60 backdrop-blur-[20px] rounded-full px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.1em] border border-white/[0.12]">
-                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse shadow-[0_0_8px_white]" />
-                On-Chain Verified
-              </div>
+
 
               <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-[20px] rounded-full px-4 py-2 text-[0.65rem] font-mono font-bold border border-white/[0.12]">
                 {loading ? '—' : mintedCount} / {MAX_SUPPLY}

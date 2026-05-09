@@ -125,8 +125,10 @@ export default function GarmentPassportPage() {
             <h3 className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#444] mb-4">On-Chain Verification</h3>
             <div className="card-glass overflow-hidden">
               {[
-                { k: 'Owner ID', v: truncateAddress(passport.owner), mono: true },
-                { k: 'Creator ID', v: truncateAddress(passport.creator), mono: true },
+                { k: 'Owner', v: truncateAddress(passport.owner), mono: true },
+
+                { k: 'Made by', v: 'Circuit', highlight: true },
+
                 { k: 'Royalty Rule', v: `${passport.royaltyPercent} Secondary Sales`, highlight: true },
                 { k: 'Record Type', v: 'Metaplex pNFT (v1)', mono: true },
               ].map((row, i, arr) => (
