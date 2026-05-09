@@ -30,8 +30,9 @@ import {
   DEMO_START_COUNT,
 } from './constants';
 
-import { Connection, clusterApiUrl, PublicKey, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Program, AnchorProvider, BN, type Idl } from '@coral-xyz/anchor';
+import { Connection, clusterApiUrl, PublicKey } from '@solana/web3.js';
+import { Program, AnchorProvider, type Idl } from '@coral-xyz/anchor';
+import * as backendApi from './backendApi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplTokenMetadata, fetchDigitalAsset } from '@metaplex-foundation/mpl-token-metadata';
 import { publicKey as umiPublicKey } from '@metaplex-foundation/umi';
@@ -191,10 +192,7 @@ const ESCROW_IDL = {
   errors: [],
 } as unknown as Idl;
 
-// Hardcoded for demo — replace with on-chain designer registry lookup for production
-const LIVE_DESIGNER_PUBKEY = '9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin';
-
-// ── Anchor providers ─────────────────────────────────────────────────
+// ── Anchor provider (read-only, for data fetching) ───────────────────
 
 function makeReadOnlyProvider(): AnchorProvider {
   const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
@@ -207,11 +205,6 @@ function makeReadOnlyProvider(): AnchorProvider {
     },
     { commitment: 'confirmed' }
   );
-}
-
-function makeLiveProvider(wallet: any): AnchorProvider {
-  const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
-  return new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
 }
 
 // ── Internal State ───────────────────────────────────────────────────
@@ -246,70 +239,45 @@ export function deriveDropPDA(dropId: string): [PublicKey, number] {
 // ── Core Transactions ────────────────────────────────────────────────
 
 /**
- * Lock buyer's payment in the on-chain escrow.
+ * Lock buyer's payment in the on-chain escrow via the backend wallet service.
+ * Creates a custodial wallet for userId on first call (idempotent).
  * Maps to INTEGRATION.md §4.1: initialize_escrow.
  */
 export async function initializeEscrow(
-  wallet: any,
+  userId: string,
   dropId: string,
   amount: number,
 ): Promise<EscrowResult> {
-  const [escrowPda] = deriveEscrowPDA(dropId, wallet.publicKey as PublicKey);
-  const program    = new Program(ESCROW_IDL, makeLiveProvider(wallet));
-
-  const sig = await program.methods
-    .initializeEscrow(dropId, new BN(Math.round(amount * LAMPORTS_PER_SOL)))
-    .accounts({
-      buyer:         wallet.publicKey,
-      designer:      new PublicKey(LIVE_DESIGNER_PUBKEY),
-      escrowAccount: escrowPda,
-      systemProgram: SystemProgram.programId,
-    })
-    .rpc();
-
-  const drop = await fetchDropData(dropId).catch(() => ({ currentCount: 0, maxSupply: MAX_SUPPLY }));
+  await backendApi.createWallet(userId);
+  const result = await backendApi.confirmOrder(userId, dropId, amount);
+  const drop   = await fetchDropData(dropId).catch(() => ({ currentCount: 0, maxSupply: MAX_SUPPLY }));
 
   return {
     success:      true,
     orderNumber:  drop.currentCount,
     currentCount: drop.currentCount,
     maxSupply:    drop.maxSupply,
-    txSignature:  sig,
-    escrowPDA:    escrowPda.toBase58(),
-    solscanUrl:   solscanTxUrl(sig),
+    txSignature:  result.signature,
+    escrowPDA:    result.escrowPDA,
+    solscanUrl:   solscanTxUrl(result.signature),
   };
 }
 
 /**
- * Increment the on-chain supply counter on circuit_drops.
+ * Increment the on-chain supply counter via the backend wallet service.
  * Maps to INTEGRATION.md §5.2: register_order.
  */
 export async function registerOrder(
-  wallet: any,
+  userId: string,
   dropId: string,
 ): Promise<OrderResult> {
-  const [dropPda] = deriveDropPDA(dropId);
-  const program   = new Program(DROPS_IDL, makeLiveProvider(wallet));
-
-  let sig: string;
+  let result: { signature: string };
   try {
-    sig = await program.methods
-      .registerOrder()
-      .accounts({
-        authority:   wallet.publicKey,
-        dropAccount: dropPda,
-      })
-      .rpc();
+    result = await backendApi.registerOrder(userId, dropId);
   } catch (err) {
-    const msg = String(err);
-    if (msg.includes('DropSoldOut') || msg.includes('6000')) {
-      const e: CircuitError = {
-        code:      'DropSoldOut',
-        errorCode: 6000,
-        message:   'This drop is sold out.',
-        program:   'circuit_drops',
-      };
-      throw e;
+    const e = err as Record<string, unknown>;
+    if (e['error'] === 'DropSoldOut' || String(err).includes('DropSoldOut')) {
+      throw { code: 'DropSoldOut', errorCode: 6000, message: 'This drop is sold out.', program: 'circuit_drops' } as CircuitError;
     }
     throw err;
   }
@@ -321,41 +289,26 @@ export async function registerOrder(
     orderNumber:  drop.currentCount,
     currentCount: drop.currentCount,
     maxSupply:    drop.maxSupply,
-    txSignature:  sig,
+    txSignature:  result.signature,
   };
 }
 
 /**
- * Release escrowed funds to the designer after delivery is confirmed.
- * Fetches the designer address from the live escrow account first.
+ * Release escrowed funds to the designer via the backend wallet service.
  * Maps to INTEGRATION.md §4.2: confirm_delivery.
  */
 export async function confirmDelivery(
-  wallet: any,
+  userId: string,
   dropId: string,
 ): Promise<DeliveryResult> {
-  const [escrowPda] = deriveEscrowPDA(dropId, wallet.publicKey as PublicKey);
-
-  const escrow = await fetchEscrowStatus(dropId, wallet.publicKey as PublicKey);
-  if (!escrow) throw new Error('Escrow not found — order may not have been placed yet.');
-
-  const program = new Program(ESCROW_IDL, makeLiveProvider(wallet));
-
-  const sig = await program.methods
-    .confirmDelivery()
-    .accounts({
-      buyer:         wallet.publicKey,
-      designer:      new PublicKey(escrow.designer),
-      escrowAccount: escrowPda,
-    })
-    .rpc();
+  const result = await backendApi.deliverOrder(userId, dropId);
 
   return {
     success:         true,
-    txSignature:     sig,
-    fundsReleased:   escrow.amount,
-    designerAddress: escrow.designer,
-    solscanUrl:      solscanTxUrl(sig),
+    txSignature:     result.signature,
+    fundsReleased:   result.fundsReleased,
+    designerAddress: result.designer,
+    solscanUrl:      solscanTxUrl(result.signature),
   };
 }
 
