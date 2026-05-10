@@ -13,7 +13,7 @@ import { showToast } from './Toast';
 const NAV_LINKS = [
   { href: '/drop', label: 'Drop', page: 'drop' },
   { href: '/confirm', label: 'Confirm', page: 'confirm' },
-  { href: '/garment/G17eNpsCn4S2Xtr4f9t9fmgyf6ZVFEpdXnpqJBiBCFEo', label: 'Passport', page: 'garment' },
+  { href: '/passport', label: 'Passport', page: 'passport' },
 ];
 
 export default function Navbar() {
@@ -59,7 +59,8 @@ export default function Navbar() {
   }, [drawerOpen]);
 
 
-  const activePage = pathname.startsWith('/garment') ? 'garment' :
+  const activePage = pathname.startsWith('/passport') ? 'passport' :
+    pathname.startsWith('/details') ? 'details' :
     pathname.startsWith('/confirm') ? 'confirm' : 'drop';
 
   const handleExportKey = () => {

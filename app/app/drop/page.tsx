@@ -27,7 +27,7 @@ import { solscanTxUrl } from '@/lib/utils';
 import { showToast } from '@/components/Toast';
 import SignInModal from '@/components/SignInModal';
 import Selector from '@/components/Selector';
-import { saveOrder } from '@/lib/db';
+import { saveOrder, supabase } from '@/lib/db';
 
 
 type TxState = 'idle' | 'signing' | 'success' | 'error' | 'soldout';
@@ -51,12 +51,28 @@ export default function DropPage() {
   const processingRef = useRef(false);
 
 
-  // Fetch drop data on mount
+  // Fetch drop data on mount (Real data from DB)
   useEffect(() => {
-    fetchDropData(DROP_ID).then((data) => {
-      setMintedCount(data.currentCount);
-      setLoading(false);
-    });
+    async function fetchRealSupply() {
+      try {
+        if (!supabase) return;
+        const { count, error } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true });
+        
+        if (!error && count !== null) {
+          setMintedCount(count);
+        }
+      } catch (err) {
+        console.error('Error fetching supply:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchRealSupply();
+    const interval = setInterval(fetchRealSupply, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleOrder = async () => {
