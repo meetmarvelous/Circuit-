@@ -89,9 +89,6 @@ export default function GarmentPassportPage() {
               className="w-full h-auto object-cover scale-[1.02]"
               priority
             />
-            <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-[20px] rounded-full px-4 py-2 text-[0.7rem] font-mono font-bold border border-white/[0.12]">
-              {passport.symbol}
-            </div>
           </div>
           
           <div className="flex flex-col items-center gap-2">

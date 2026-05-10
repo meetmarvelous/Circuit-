@@ -134,7 +134,7 @@ export default function DropPage() {
   const isSoldOut = mintedCount >= MAX_SUPPLY;
 
   return (
-    <section className="min-h-[calc(100vh-72px)] flex flex-col pt-[72px]" aria-label="Drop Zero">
+    <section className="min-h-[calc(100vh-72px)] flex flex-col pt-[72px] overflow-x-hidden" aria-label="Drop Zero">
 
       {/* Ambient */}
       <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
