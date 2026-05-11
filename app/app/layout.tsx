@@ -1,5 +1,7 @@
-import type { Metadata } from "next";
+'use client';
+
 import { Montserrat, Outfit, JetBrains_Mono } from "next/font/google";
+import { usePathname } from 'next/navigation';
 import ClientProviders from "@/providers/ClientProviders";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -24,34 +26,14 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "600"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://circuit-solana.vercel.app'),
-  title: {
-    default: "Circuit — Drop Zero",
-    template: "CIRCUIT — %s",
-  },
-  description:
-    "Made-to-order fashion infrastructure on Solana. Every garment confirmed, every payment trustless, every ownership permanent.",
-  openGraph: {
-    title: "Circuit — Made-to-Order Fashion on Solana",
-    description:
-      "Drop Zero: The Wrap Dress. Limited to 40 units. Payment held in trustless escrow. Ownership recorded permanently on-chain.",
-    type: "website",
-    images: ["/dpp-image.png"],
-  },
-  twitter: {
-    card: "summary_large_image",
-  },
-  icons: {
-    icon: "/logo/logo_icon_white.svg",
-  },
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAdminPage = pathname?.startsWith('/admin');
+
   return (
     <html
       lang="en"
@@ -59,11 +41,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-black text-white font-body antialiased overflow-x-hidden">
         <ClientProviders>
-          <Navbar />
-          <main className="flex-1 pt-[72px]" role="main">
+          {!isAdminPage && <Navbar />}
+          <main className={`flex-1 ${!isAdminPage ? 'pt-[72px]' : ''}`} role="main">
             {children}
           </main>
-          <Footer />
+          {!isAdminPage && <Footer />}
           <Toast />
         </ClientProviders>
       </body>

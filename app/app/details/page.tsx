@@ -147,7 +147,7 @@ export default function DetailsPage() {
               />
               <FAQItem 
                 question="2. Do I need crypto or a wallet to use Circuit?" 
-                answer="No. You sign up with your email and complete your order normally. The blockchain runs in the background."
+                answer="No. You sign up with your email and complete your order normally."
               />
               <FAQItem 
                 question="3. What happens to my payment while I wait?" 
@@ -170,8 +170,8 @@ export default function DetailsPage() {
                 answer="Production begins only after your order is confirmed. Timeline is specific to each drop and communicated before you commit."
               />
               <FAQItem 
-                question="8. What is the Founding Circle?" 
-                answer="The Founding Circle is an early-access community for people joining Circuit before the first public drop. Members get first access to future releases and product updates."
+                question="8. When does Drop Zero open?" 
+                answer="Drop Zero opens to the waitlist first. Join above to be notified before the public."
               />
             </div>
           </div>

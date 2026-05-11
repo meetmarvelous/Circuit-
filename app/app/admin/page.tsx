@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
 import { supabase, getUserOrders } from '@/lib/db';
-import Navbar from '@/components/Navbar';
+import AdminNavbar from '@/components/AdminNavbar';
 import { showToast } from '@/components/Toast';
 
 interface Order {
@@ -112,10 +112,10 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black text-white">
-      <Navbar />
+    <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
+      <AdminNavbar />
       
-      <main className="flex-1 section-container pt-32 pb-20 print:p-0 print:pt-0">
+      <main className="section-container pt-32 pb-20 print:p-0 print:pt-0">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 print:hidden">
           <header>
@@ -241,22 +241,25 @@ export default function AdminDashboard() {
 
         {/* QR MODAL */}
         {selectedQR && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 print:p-0 print:static print:inset-auto">
-            <div className="absolute inset-0 bg-black/90 backdrop-blur-md print:hidden" onClick={() => setSelectedQR(null)} />
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 print:p-0 print:static print:inset-auto">
+            <div className="absolute inset-0 bg-black/95 backdrop-blur-xl print:hidden" onClick={() => setSelectedQR(null)} />
             
-            <div className="relative w-full max-w-sm card-glass p-8 flex flex-col items-center animate-scale-in print:shadow-none print:border-none print:bg-white print:text-black print:p-0">
+            <div className="relative w-full max-w-md md:max-w-lg card-glass p-6 md:p-10 flex flex-col items-center animate-scale-in print:shadow-none print:border-none print:bg-white print:text-black print:p-0 border-white/20 max-h-[90vh] overflow-y-auto no-scrollbar">
               <div className="print:hidden w-full flex justify-between items-center mb-8 text-[#666]">
-                <span className="text-[0.6rem] font-bold tracking-[0.2em] uppercase">Garment Identity Tag</span>
-                <button onClick={() => setSelectedQR(null)} className="hover:text-white text-xl">×</button>
+                <div className="flex flex-col">
+                  <span className="text-[0.6rem] font-bold tracking-[0.3em] uppercase text-white/80">Physical Identity Tag</span>
+                  <span className="text-[0.5rem] font-medium tracking-[0.1em] uppercase mt-1">Ready for Print</span>
+                </div>
+                <button onClick={() => setSelectedQR(null)} className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors text-lg">×</button>
               </div>
 
               {/* Printable Tag Area */}
-              <div id="identity-tag" className="flex flex-col items-center bg-white p-10 rounded-3xl print:p-4 print:rounded-none">
-                <div className="mb-6 opacity-80 scale-75 invert print:invert-0">
-                   <Image src="/logo/logo_icon_white.svg" alt="Circuit" width={40} height={40} />
+              <div id="identity-tag" className="flex flex-col items-center bg-white p-8 md:p-10 rounded-[2rem] print:p-4 print:rounded-none shadow-2xl w-full max-w-[320px]">
+                <div className="mb-6 opacity-90 scale-100 invert print:invert-0">
+                   <Image src="/logo/logo_icon_white.svg" alt="Circuit" width={36} height={36} />
                 </div>
                 
-                <div className="bg-white p-4 rounded-2xl border border-black/5 mb-6">
+                <div className="bg-white p-4 rounded-3xl border border-black/[0.03] mb-6 shadow-sm">
                   <QRCodeCanvas 
                     value={`${window.location.origin}/passport?order=${selectedQR.id}`}
                     size={160}
@@ -266,27 +269,22 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="text-center">
-                  <span className="text-[0.55rem] font-bold tracking-[0.2em] uppercase text-black/40 block mb-1">Serial Number</span>
-                  <span className="text-xl font-mono font-bold text-black tracking-tighter">{selectedQR.garment_serial}</span>
+                  <span className="text-[0.55rem] font-bold tracking-[0.3em] uppercase text-black/30 block mb-1">Serial Number</span>
+                  <span className="text-2xl font-mono font-bold text-black tracking-tight">{selectedQR.garment_serial}</span>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-black/5 w-full text-center">
-                   <span className="text-[0.5rem] font-bold tracking-[0.1em] uppercase text-black/60">Drop Zero — Series 1</span>
+                <div className="mt-8 pt-6 border-t border-black/[0.05] w-full text-center">
+                   <span className="text-[0.5rem] font-bold tracking-[0.2em] uppercase text-black/80">Drop Zero — Series 1</span>
                 </div>
               </div>
 
-              <div className="mt-10 flex gap-4 w-full print:hidden">
-                <button 
-                  onClick={() => setSelectedQR(null)}
-                  className="flex-1 py-4 text-xs font-bold uppercase tracking-widest border border-white/10 rounded-full hover:bg-white/5 transition-colors"
-                >
-                  Cancel
-                </button>
+              <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full max-w-[320px] print:hidden">
                 <button 
                   onClick={handlePrint}
-                  className="flex-1 btn-circuit py-4 text-xs justify-center"
+                  className="flex-1 btn-circuit py-3.5 text-[0.65rem] justify-center"
                 >
-                  <span>Print Tag</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mr-2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
+                  <span>Print Identity Tag</span>
                 </button>
               </div>
             </div>

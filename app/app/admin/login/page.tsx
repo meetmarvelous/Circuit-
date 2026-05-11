@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { loginAdmin } from '@/lib/db';
+import AdminNavbar from '@/components/AdminNavbar';
 
 export default function AdminLoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -38,6 +39,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 selection:bg-white selection:text-black">
+      <AdminNavbar />
       {/* Ambient Orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white/[0.03] rounded-full blur-[120px]" />
