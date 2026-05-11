@@ -98,46 +98,55 @@ function PassportContent() {
 
           {/* Right Column: Information */}
           <div className="flex flex-col gap-10" style={{ animation: 'fadeIn 0.6s ease-out 0.2s both' }}>
-            <header className="flex justify-between items-start">
+            <header className="flex justify-between items-center md:items-start gap-4">
               <div>
                 <span className="text-[0.65rem] font-bold text-[#666] uppercase tracking-[0.2em] mb-3 block">
                   Digital Product Passport
                 </span>
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Garment Identity</h1>
-                <p className="text-[#666] leading-relaxed max-w-md text-sm">
+                <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Garment Identity</h1>
+                <p className="text-[#666] leading-relaxed max-w-md text-sm md:text-base">
                   {status === 'pending' ? 'Your garment has been reserved. The designer is currently preparing materials for Drop Zero.' :
                    status === 'in_production' ? 'The fabric has been cut. Your digital birth certificate is active and your garment is being hand-crafted.' :
                    'Your 3 Piece Agbada is complete. The physical garment and digital record are now permanently linked.'}
                 </p>
               </div>
 
-              {/* Share/Verify Button */}
+              {/* Share/Verify Button - Now Visible on Mobile */}
               <button 
                 onClick={() => setShowQR(!showQR)}
-                className="hidden md:flex flex-col items-center gap-2 group"
+                className="flex flex-col items-center gap-2 group shrink-0"
               >
-                <div className="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center group-hover:bg-white/[0.06] transition-colors">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center group-hover:bg-white/[0.06] transition-colors shadow-2xl">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M7 7h.01M17 7h.01M17 17h.01M7 17h.01"/>
                   </svg>
                 </div>
-                <span className="text-[0.5rem] font-bold uppercase tracking-widest text-[#444] group-hover:text-white">Verify</span>
+                <span className="text-[0.55rem] font-bold uppercase tracking-widest text-[#666] group-hover:text-white transition-colors">Verify</span>
               </button>
             </header>
 
-            {/* Expanded QR Section */}
+            {/* Expanded QR Section - Mobile Optimized */}
             {showQR && (
-              <div className="card-glass p-8 flex flex-col items-center animate-scale-in">
-                <div className="bg-white p-3 rounded-xl mb-6">
+              <div className="card-glass p-8 md:p-12 flex flex-col items-center animate-scale-in border-white/20 relative">
+                <button 
+                  onClick={() => setShowQR(false)}
+                  className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors text-xl"
+                >
+                  ×
+                </button>
+                <div className="bg-white p-4 rounded-3xl mb-8 shadow-[0_0_50px_rgba(255,255,255,0.1)]">
                   <QRCodeCanvas 
                     value={passportUrl}
-                    size={140}
+                    size={200}
                     level="H"
                   />
                 </div>
-                <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#666] text-center max-w-[200px] leading-loose">
-                  Scan to verify this garment on the Circuit Protocol
-                </p>
+                <div className="text-center">
+                  <h4 className="text-sm font-bold uppercase tracking-[0.2em] mb-2">Authenticity Shield</h4>
+                  <p className="text-[0.65rem] text-[#666] max-w-[220px] leading-relaxed mx-auto uppercase tracking-wide">
+                    Present this code for scanning to verify ownership on the Circuit Protocol.
+                  </p>
+                </div>
               </div>
             )}
 

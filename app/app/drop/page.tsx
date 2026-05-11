@@ -103,7 +103,8 @@ export default function DropPage() {
           drop_id: DROP_ID,
           tx_signature: result.txSignature,
           escrow_pda: result.escrowPDA,
-          amount_sol: PRICE_SOL
+          amount_sol: PRICE_SOL,
+          size: selectedSize
         });
       }
 
@@ -241,19 +242,21 @@ export default function DropPage() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-4 items-center">
               <button
-                className={`btn-circuit w-full sm:w-auto ${txState === 'signing' ? 'signing' : ''}`}
+                className={`btn-circuit w-full sm:w-auto ${txState === 'signing' ? 'signing' : ''} ${isSoldOut ? '!bg-[#111] !text-[#444] !border-white/5' : ''}`}
                 onClick={handleOrder}
-                disabled={txState === 'signing'}
+                disabled={txState === 'signing' || isSoldOut}
               >
                 <span>
                   {txState === 'signing' ? 'Confirming...' : 
                    txState === 'success' ? '✓ Order Confirmed' :
-                   txState === 'soldout' ? '✗ Sold Out' :
+                   isSoldOut ? 'Scarcity Reached' :
                    'Confirm Order'}
                 </span>
                 <span className="btn-arrow">
                   {txState === 'signing' ? (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><path d="M12 2a10 10 0 010 20 10 10 0 010-20"/></svg>
+                  ) : isSoldOut ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-20"><path d="M18 6L6 18M6 6l12 12"/></svg>
                   ) : (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                   )}
@@ -284,14 +287,14 @@ export default function DropPage() {
               </div>
             )}
 
-            {txState === 'soldout' && (
-              <div className="tx-msg err flex flex-col gap-2 !border-[#ff5050]/30">
-                <div className="flex items-center gap-2 font-bold uppercase tracking-wider">
-                  <span>✗</span>
-                  <span>Scarcity Reached</span>
+            {isSoldOut && txState !== 'success' && (
+              <div className="tx-msg err flex flex-col gap-2 !border-white/10 !bg-white/[0.02]">
+                <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-white">
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                  <span>Series Zero Closed</span>
                 </div>
-                <p className="text-xs opacity-80 leading-relaxed">
-                  All {MAX_SUPPLY} units have been reserved. The production line is closed for this edition.
+                <p className="text-[0.65rem] text-[#666] leading-relaxed uppercase tracking-tight">
+                  All {MAX_SUPPLY} units of the 3 Piece Agbada have been reserved. The production protocol for this edition is now locked.
                 </p>
               </div>
             )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
 import { supabase, getUserOrders } from '@/lib/db';
 import Navbar from '@/components/Navbar';
@@ -21,14 +22,12 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedQR, setSelectedQR] = useState<Order | null>(null);
+  const router = useRouter();
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  async function fetchOrders() {
+  const fetchOrders = async () => {
     try {
       if (!supabase) return;
       const { data, error } = await supabase
@@ -39,10 +38,32 @@ export default function AdminDashboard() {
       if (error) throw error;
       setOrders(data || []);
     } catch (err) {
-      console.error('Fetch error:', err);
+      console.error('Error fetching orders:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    // 1. Auth Guard
+    const session = sessionStorage.getItem('circuit_admin_session');
+    if (!session) {
+      router.push('/admin/login');
+      return;
+    }
+    setIsAuthorized(true);
+    fetchOrders();
+  }, [router]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-2 border-white/10 border-t-white rounded-full animate-spin" />
+          <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#444]">Authorizing</span>
+        </div>
+      </div>
+    );
   }
 
   const stats = {
@@ -60,7 +81,14 @@ export default function AdminDashboard() {
   async function startProduction(orderId: string) {
     setProcessingId(orderId);
     try {
-      const serial = `CRCT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      setProcessingId(orderId);
+      // Find the highest existing serial to ensure next is truly unique
+      const existingSerials = orders
+        .map(o => parseInt(o.garment_serial || '0'))
+        .filter(n => !isNaN(n));
+      const nextNum = Math.max(0, ...existingSerials) + 1;
+      const serial = String(nextNum).padStart(2, '0');
+      
       const { error } = await supabase!
         .from('orders')
         .update({ 

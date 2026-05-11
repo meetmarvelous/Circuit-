@@ -35,8 +35,40 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
     status TEXT DEFAULT 'pending', -- pending, delivered, cancelled
     amount_sol DECIMAL NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  CREATE TABLE admins (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email TEXT UNIQUE NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   );
 */
+
+// ── Admin Authentication ────────────────────────────────────────────
+
+export async function loginAdmin(identifier: string, passwordHash: string) {
+  if (supabase) {
+    // Check by email or username
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .or(`email.eq.${identifier},username.eq.${identifier}`)
+      .eq('password_hash', passwordHash)
+      .single();
+    
+    if (error) {
+      console.error('Admin Auth Error:', error.message);
+      return null;
+    }
+    return data;
+  }
+
+  // Fallback: Local simulation for dev
+  if (identifier === 'zipp' || identifier === 'marvel' || identifier.includes('@')) {
+    return { username: identifier, email: identifier };
+  }
+  return null;
+}
 
 // ── Helper Functions (Simulation Fallback) ───────────────────────────
 
@@ -87,6 +119,7 @@ export async function saveOrder(orderData: {
   tx_signature: string;
   escrow_pda: string;
   amount_sol: number;
+  size?: string;
 }) {
   if (supabase) {
     const { data, error } = await supabase
