@@ -48,6 +48,7 @@ export default function DropPage() {
   const [loading, setLoading] = useState(true);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState('Medium');
+  const [quantity, setQuantity] = useState(1);
   const processingRef = useRef(false);
 
 
@@ -94,7 +95,8 @@ export default function DropPage() {
 
     try {
       // 1. Solana Handshake (via backend custodial wallet)
-      const result = await initializeEscrow(user.email, DROP_ID, PRICE_SOL);
+      const totalAmountSol = PRICE_SOL * quantity;
+      const result = await initializeEscrow(user.email, DROP_ID, totalAmountSol);
 
       // 2. Persist to DB
       if (user?.email) {
@@ -103,8 +105,9 @@ export default function DropPage() {
           drop_id: DROP_ID,
           tx_signature: result.txSignature,
           escrow_pda: result.escrowPDA,
-          amount_sol: PRICE_SOL,
-          size: selectedSize
+          amount_sol: totalAmountSol,
+          size: selectedSize,
+          quantity: quantity
         });
       }
 
@@ -221,6 +224,28 @@ export default function DropPage() {
               selected={selectedSize} 
               onChange={setSelectedSize} 
             />
+            
+            {/* Quantity Selector */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[0.65rem] text-[#666] uppercase tracking-[0.12em] font-bold">Quantity</span>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors"
+                  type="button"
+                >
+                  <span className="text-white text-lg">−</span>
+                </button>
+                <span className="text-lg font-bold min-w-[20px] text-center">{quantity}</span>
+                <button 
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors"
+                  type="button"
+                >
+                  <span className="text-white text-lg">+</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Mint Progress */}

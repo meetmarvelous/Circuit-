@@ -120,6 +120,7 @@ export async function saveOrder(orderData: {
   escrow_pda: string;
   amount_sol: number;
   size?: string;
+  quantity?: number;
 }) {
   if (supabase) {
     const { data, error } = await supabase
@@ -163,6 +164,27 @@ export async function updateOrderStatus(txSignature: string, status: 'delivered'
     const orders = JSON.parse(localStorage.getItem('circuit_orders') || '[]');
     const updatedOrders = orders.map((o: any) => 
       o.tx_signature === txSignature ? { ...o, status } : o
+    );
+    localStorage.setItem('circuit_orders', JSON.stringify(updatedOrders));
+  }
+}
+
+export async function updateOrderDelivery(txSignature: string, location: string, address: string) {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ delivery_location: location, delivery_address: address })
+      .eq('tx_signature', txSignature);
+    
+    if (error) console.error('Supabase Update Delivery Error:', error);
+    return data;
+  }
+
+  // Fallback: Local Storage
+  if (typeof window !== 'undefined') {
+    const orders = JSON.parse(localStorage.getItem('circuit_orders') || '[]');
+    const updatedOrders = orders.map((o: any) => 
+      o.tx_signature === txSignature ? { ...o, delivery_location: location, delivery_address: address } : o
     );
     localStorage.setItem('circuit_orders', JSON.stringify(updatedOrders));
   }

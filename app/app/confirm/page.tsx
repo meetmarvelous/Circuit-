@@ -8,7 +8,7 @@ import { confirmDelivery, parseError } from '@/lib/solana-service';
 import { DROP_ID, MAX_SUPPLY, GARMENT_MINT } from '@/lib/constants';
 import { showToast } from '@/components/Toast';
 import SignInModal from '@/components/SignInModal';
-import { updateOrderStatus } from '@/lib/db';
+import { updateOrderStatus, updateOrderDelivery } from '@/lib/db';
 
 type TxState = 'idle' | 'signing' | 'success' | 'error';
 
@@ -25,6 +25,8 @@ export default function ConfirmPage() {
   const [txState, setTxState] = useState<TxState>('idle');
   const [txResult, setTxResult] = useState<TxResult>({});
   const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const [deliveryLocation, setDeliveryLocation] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const processingRef = useRef(false);
 
   const handleDeliver = async () => {
@@ -45,8 +47,14 @@ export default function ConfirmPage() {
     setTxResult({});
 
     try {
+      if (!deliveryLocation || !deliveryAddress) {
+        showToast('Info Required', 'Please fill in your delivery location and address.');
+        return;
+      }
+
       const result = await confirmDelivery(user.email, DROP_ID);
 
+      await updateOrderDelivery(result.txSignature, deliveryLocation, deliveryAddress);
       await updateOrderStatus(result.txSignature, 'delivered');
 
       setTxState('success');
@@ -101,6 +109,37 @@ export default function ConfirmPage() {
           <div className="flex flex-col text-left">
             <span className="text-[0.6rem] font-bold text-[#666] uppercase tracking-wider">Garment ID</span>
             <span className="text-sm font-bold">Drop Zero — 3 Piece Agbada</span>
+          </div>
+        </div>
+
+        {/* Delivery Options */}
+        <div className="w-full flex flex-col gap-4 text-left">
+          <div className="flex flex-col gap-2">
+            <span className="text-[0.65rem] text-[#666] uppercase tracking-[0.12em] font-bold">Preferred Delivery Location</span>
+            <select 
+              value={deliveryLocation}
+              onChange={(e) => setDeliveryLocation(e.target.value)}
+              className="bg-[#0D0D0D] border border-white/[0.08] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-white/20"
+            >
+              <option value="">Select Location</option>
+              <option value="Lagos">Lagos</option>
+              <option value="Ibadan">Ibadan</option>
+              <option value="Abuja" disabled className="text-[#444]">Abuja (Coming Soon)</option>
+              <option value="Port Harcourt" disabled className="text-[#444]">Port Harcourt (Coming Soon)</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-[0.65rem] text-[#666] uppercase tracking-[0.12em] font-bold">Delivery Address</span>
+            <textarea 
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              placeholder="Enter your full address"
+              className="bg-[#0D0D0D] border border-white/[0.08] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-white/20 h-20 resize-none"
+            />
+            <p className="text-[0.65rem] text-[#666] italic mt-1">
+              *Address submission doesn’t guarantee doorstep delivery. Pickup details will be emailed once your order is ready
+            </p>
           </div>
         </div>
 
