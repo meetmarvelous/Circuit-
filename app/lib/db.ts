@@ -54,7 +54,7 @@ export async function loginAdmin(identifier: string, passwordHash: string) {
       .select('*')
       .or(`email.eq.${identifier},username.eq.${identifier}`)
       .eq('password_hash', passwordHash)
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('Admin Auth Error:', error.message);
@@ -169,12 +169,13 @@ export async function updateOrderStatus(txSignature: string, status: 'delivered'
   }
 }
 
-export async function updateOrderDelivery(txSignature: string, location: string, address: string) {
+export async function updateOrderDelivery(email: string, location: string, address: string) {
   if (supabase) {
     const { data, error } = await supabase
       .from('orders')
       .update({ delivery_location: location, delivery_address: address })
-      .eq('tx_signature', txSignature);
+      .eq('email', email)
+      .eq('status', 'pending');
     
     if (error) console.error('Supabase Update Delivery Error:', error);
     return data;
@@ -184,7 +185,7 @@ export async function updateOrderDelivery(txSignature: string, location: string,
   if (typeof window !== 'undefined') {
     const orders = JSON.parse(localStorage.getItem('circuit_orders') || '[]');
     const updatedOrders = orders.map((o: any) => 
-      o.tx_signature === txSignature ? { ...o, delivery_location: location, delivery_address: address } : o
+      o.email === email && o.status === 'pending' ? { ...o, delivery_location: location, delivery_address: address } : o
     );
     localStorage.setItem('circuit_orders', JSON.stringify(updatedOrders));
   }

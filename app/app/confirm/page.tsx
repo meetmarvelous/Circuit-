@@ -52,9 +52,11 @@ export default function ConfirmPage() {
         return;
       }
 
+      // Save delivery info first while status is still 'pending'
+      await updateOrderDelivery(user.email, deliveryLocation, deliveryAddress);
+
       const result = await confirmDelivery(user.email, DROP_ID);
 
-      await updateOrderDelivery(result.txSignature, deliveryLocation, deliveryAddress);
       await updateOrderStatus(result.txSignature, 'delivered');
 
       setTxState('success');

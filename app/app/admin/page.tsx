@@ -16,6 +16,8 @@ interface Order {
   tx_signature: string;
   created_at: string;
   garment_serial?: string;
+  delivery_location?: string;
+  delivery_address?: string;
 }
 
 export default function AdminDashboard() {
@@ -185,7 +187,7 @@ export default function AdminDashboard() {
                       <span className="text-[0.6rem] font-mono text-[#333] truncate">#{order.id.slice(0,10)}</span>
                     </div>
                     <h3 className="text-md font-bold truncate">{order.email}</h3>
-                    <div className="flex gap-4 mt-2">
+                    <div className="flex flex-wrap gap-4 mt-2">
                       <div className="text-[0.6rem] text-[#666]">
                         <span className="uppercase tracking-widest opacity-50">Transaction</span>
                         <a href={`https://solscan.io/tx/${order.tx_signature}?cluster=devnet`} target="_blank" className="font-mono block hover:text-white truncate max-w-[120px]">
@@ -196,6 +198,13 @@ export default function AdminDashboard() {
                         <div className="text-[0.6rem] text-white">
                           <span className="uppercase tracking-widest opacity-50 text-[#666]">Serial</span>
                           <span className="font-mono block font-bold text-emerald-400">{order.garment_serial}</span>
+                        </div>
+                      )}
+                      {order.delivery_location && (
+                        <div className="text-[0.6rem] text-white max-w-[200px]">
+                          <span className="uppercase tracking-widest opacity-50 text-[#666]">Delivery</span>
+                          <span className="block font-bold text-amber-400">{order.delivery_location}</span>
+                          <span className="text-[#444] block truncate" title={order.delivery_address}>{order.delivery_address}</span>
                         </div>
                       )}
                     </div>
