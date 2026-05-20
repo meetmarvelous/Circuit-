@@ -45,6 +45,16 @@ export function formatEdition(n: number, total: number): string {
   return `${String(n).padStart(2, '0')} of ${total}`;
 }
 
+export function formatSerialNumber(serial: string | undefined, maxSupply: number | undefined): string {
+  if (!serial) return 'Pending';
+  const supply = maxSupply || 40;
+  const parsed = parseInt(serial, 10);
+  if (!isNaN(parsed)) {
+    return `${String(parsed).padStart(2, '0')} of ${supply}`;
+  }
+  return `${serial} of ${supply}`;
+}
+
 export function formatRoyalty(bps: number): string {
   return `${bps / 100}%`;
 }

@@ -73,6 +73,13 @@ export default function Navbar() {
     }
   };
 
+  const handleCopyWallet = () => {
+    if (user?.walletAddress) {
+      navigator.clipboard.writeText(user.walletAddress);
+      showToast('✓ Copied', 'Wallet address copied to clipboard');
+    }
+  };
+
   return (
     <>
       <nav className="fixed top-0 left-0 w-full h-[72px] z-[1000] bg-black/60 backdrop-blur-[24px] border-b border-white/[0.08]" role="navigation">
@@ -122,11 +129,25 @@ export default function Navbar() {
                 {/* Desktop Dropdown - Fixed Contrast */}
                 {isProfileOpen && (
                   <div className="absolute top-[calc(100%+12px)] right-0 w-64 card-glass p-2 border border-white/[0.15] shadow-[0_30px_60px_rgba(0,0,0,0.7)] animate-fade-in z-[1100]">
-                    <div className="px-4 py-3.5 border-b border-white/[0.1] mb-1">
-                      <p className="text-[0.6rem] font-bold text-[#A3A3A3] uppercase tracking-[0.15em] mb-1.5">Account Connected</p>
-                      <p className="text-[0.7rem] font-mono text-white/70 break-all leading-relaxed">{user?.walletAddress}</p>
+                    <div 
+                      onClick={handleCopyWallet}
+                      className="px-4 py-3.5 border-b border-white/[0.1] mb-1 cursor-pointer hover:bg-white/[0.04] transition-colors group/wallet rounded-xl"
+                    >
+                      <div className="flex justify-between items-center mb-1.5">
+                        <p className="text-[0.6rem] font-bold text-[#A3A3A3] uppercase tracking-[0.15em]">Account Connected</p>
+                        <span className="text-[0.55rem] text-[#666] group-hover/wallet:text-white/60 transition-colors uppercase font-mono">Copy 📋</span>
+                      </div>
+                      <p className="text-[0.7rem] font-mono text-white/70 break-all leading-relaxed transition-colors group-hover/wallet:text-white">{user?.walletAddress}</p>
                     </div>
                     <div className="p-1 flex flex-col gap-1">
+                      <Link 
+                        href="/passport/history"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="w-full text-left px-4 py-3 text-[0.75rem] font-semibold text-[#D1D1D1] hover:text-white hover:bg-white/[0.08] rounded-xl transition-all flex items-center gap-3.5 group"
+                      >
+                        <span className="text-base group-hover:scale-110 transition-transform">📜</span>
+                        Purchase History
+                      </Link>
                       <button 
                         onClick={handleExportKey}
                         className="w-full text-left px-4 py-3 text-[0.75rem] font-semibold text-[#D1D1D1] hover:text-white hover:bg-white/[0.08] rounded-xl transition-all flex items-center gap-3.5 group"
@@ -198,12 +219,31 @@ export default function Navbar() {
 
           <div className="mt-auto pt-12 border-t border-white/[0.08] flex flex-col gap-8">
             {isSignedIn ? (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-5">
                 <div className="flex flex-col">
                   <span className="text-[0.6rem] font-bold text-[#666] uppercase tracking-[0.1em]">Authenticated as</span>
-                  <span className="text-lg font-bold text-white">{user?.email}</span>
+                  <span className="text-lg font-bold text-white mb-2">{user?.email}</span>
+                  
+                  {/* Copyable Mobile Wallet Address */}
+                  <div 
+                    onClick={handleCopyWallet}
+                    className="p-3.5 bg-white/[0.03] border border-white/[0.08] rounded-xl flex flex-col gap-1.5 cursor-pointer hover:bg-white/[0.06] active:bg-white/[0.08] transition-all"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-[0.55rem] font-bold text-[#A3A3A3] uppercase tracking-[0.1em]">Connected Wallet</span>
+                      <span className="text-[0.55rem] text-[#666] uppercase font-mono">Tap to Copy 📋</span>
+                    </div>
+                    <span className="text-[0.65rem] font-mono text-white/60 break-all leading-normal">{user?.walletAddress}</span>
+                  </div>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-x-6 gap-y-2 mt-1">
+                  <Link 
+                    href="/passport/history" 
+                    onClick={() => setDrawerOpen(false)}
+                    className="text-[0.75rem] font-bold text-white underline flex items-center gap-1.5"
+                  >
+                    📜 Purchase History
+                  </Link>
                   <button onClick={handleExportKey} className="text-[0.75rem] font-bold text-[#A3A3A3] underline">Export Key</button>
                   <button onClick={() => { signOut(); setDrawerOpen(false); }} className="text-[0.75rem] font-bold text-[#ff5050] underline">Sign Out</button>
                 </div>

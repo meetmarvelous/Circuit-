@@ -3,35 +3,87 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
-import { supabase } from '@/lib/db';
+import { supabase, getEditionById, getUserOrders } from '@/lib/db';
+import { useAuth } from '@/lib/auth-context';
+import { solscanTxUrl, formatSerialNumber } from '@/lib/utils';
 import Navbar from '@/components/Navbar';
 import Image from 'next/image';
-import { FABRIC, HEADPIECE, EMBROIDERY, MAX_SUPPLY } from '@/lib/constants';
 
 function PassportContent() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get('order');
+  const orderIdParam = searchParams.get('order');
+  const [orderId, setOrderId] = useState<string | null>(orderIdParam);
   const [order, setOrder] = useState<any>(null);
+  const [edition, setEdition] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
+  const { user, isSignedIn } = useAuth();
+
+  // Sync orderId parameter, retrieve cached order ID from localStorage, or query most recent order
+  useEffect(() => {
+    async function resolveOrderId() {
+      if (orderIdParam) {
+        setOrderId(orderIdParam);
+        return;
+      }
+
+      if (typeof window !== 'undefined') {
+        const cachedId = localStorage.getItem('circuit_last_order_id');
+        if (cachedId) {
+          setOrderId(cachedId);
+          return;
+        }
+      }
+
+      // Fallback: Query the database for the user's most recent order if signed in
+      if (isSignedIn && user?.email) {
+        try {
+          const orders = await getUserOrders(user.email);
+          if (orders && orders.length > 0) {
+            const latestOrder = orders[0];
+            setOrderId(latestOrder.id);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('circuit_last_order_id', latestOrder.id);
+            }
+            return;
+          }
+        } catch (err) {
+          console.error('Error resolving fallback order:', err);
+        }
+      }
+
+      setLoading(false);
+    }
+
+    resolveOrderId();
+  }, [orderIdParam, isSignedIn, user]);
 
   useEffect(() => {
-    if (orderId) fetchOrder();
+    if (orderId) {
+      fetchOrderAndEdition();
+    }
   }, [orderId]);
 
-  async function fetchOrder() {
+  async function fetchOrderAndEdition() {
     try {
+      setLoading(true);
       if (!supabase) return;
-      const { data, error } = await supabase
+      
+      const { data: ord, error: ordErr } = await supabase
         .from('orders')
         .select('*')
         .eq('id', orderId)
         .single();
       
-      if (error) throw error;
-      setOrder(data);
+      if (ordErr) throw ordErr;
+      setOrder(ord);
+
+      if (ord && ord.drop_id) {
+        const ed = await getEditionById(ord.drop_id);
+        setEdition(ed);
+      }
     } catch (err) {
-      console.error('Error fetching order:', err);
+      console.error('Error fetching dynamic passport records:', err);
     } finally {
       setLoading(false);
     }
@@ -39,8 +91,9 @@ function PassportContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-black">
+        <div className="w-12 h-12 border-2 border-white/10 border-t-white rounded-full animate-spin" />
+        <span className="text-xs font-mono text-[#555] mt-4">Connecting Identity Node...</span>
       </div>
     );
   }
@@ -48,15 +101,33 @@ function PassportContent() {
   if (!order) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-black p-6 text-center">
-        <h1 className="text-2xl font-bold mb-4">Passport Not Found</h1>
-        <p className="text-[#666] max-w-xs">This QR code or link may be invalid or the order record has not been initialized yet.</p>
-        <a href="/drop" className="mt-8 btn-outline-circuit">Return to Shop</a>
+        <h1 className="text-2xl font-bold mb-4">Passport Not Loaded</h1>
+        <p className="text-[#666] max-w-sm mb-8 leading-relaxed">
+          No active product passport is currently cached. Order a collection run to generate your passport digital certificate.
+        </p>
+        <div className="flex gap-4">
+          <a href="/passport/history" className="btn-circuit py-4 px-10 text-xs">
+            <span>View Purchases History</span>
+          </a>
+          <a href="/drop" className="btn-outline-circuit py-4 px-10 text-xs border-white/10 hover:border-white/30">
+            Visit Shop
+          </a>
+        </div>
       </div>
     );
   }
 
   const status = order.status || 'pending';
+  const isMinted = ['produced', 'shipped', 'delivered'].includes(status);
   const passportUrl = typeof window !== 'undefined' ? `${window.location.origin}/passport?order=${order.id}` : '';
+  const activeEdition = edition || {
+    name: '3 Piece Agbada',
+    fabric: 'Duchess satin',
+    headpiece: 'Velvet',
+    embroidery: 'Metallic thread',
+    max_supply: 40,
+    image_url: '/satin.png'
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-white selection:bg-white selection:text-black overflow-x-hidden">
@@ -64,22 +135,47 @@ function PassportContent() {
       
       <main className="flex-1 flex flex-col py-24 md:py-32">
         <div className="section-container">
+          
+          {/* Header Portal Navigation */}
+          <div className="flex justify-end mb-8 relative z-10">
+            <a href="/passport/history" className="btn-outline-circuit py-2 px-6 text-[0.65rem] border-white/10 hover:border-white/20">
+              View Purchases History ➔
+            </a>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
             
-            {/* Left Column: Garment Visual */}
+            {/* Left Column: Premium Interactive Garment Frame */}
             <div className="lg:col-span-5 sticky top-32" style={{ animation: 'fadeIn 0.6s ease-out' }}>
               <div className="relative aspect-[4/5] md:aspect-square w-full rounded-[2.5rem] overflow-hidden border border-white/10 group shadow-2xl">
                 <Image 
-                  src="/satin.png" 
-                  alt="3 Piece Agbada" 
+                  src={activeEdition.image_url || "/satin.png"} 
+                  alt={activeEdition.name} 
                   fill 
                   className="object-cover group-hover:scale-105 transition-transform duration-1000"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
+                
+                {/* Micro animation overlay */}
+                <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between z-10">
+                  <div className="bg-black/60 backdrop-blur-[20px] rounded-full px-4 py-2 text-[0.6rem] font-bold uppercase tracking-[0.1em] border border-white/[0.12] flex items-center gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full ${isMinted ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-amber-400 shadow-[0_0_8px_#fbbf24] animate-pulse'}`} />
+                    {activeEdition.name}
+                  </div>
+                  {order.garment_serial ? (
+                    <span className="text-[0.6rem] font-mono text-white/50 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+                      Edition: {formatSerialNumber(order.garment_serial, activeEdition.max_supply)}
+                    </span>
+                  ) : (
+                    <span className="text-[0.6rem] font-mono text-white/50 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full animate-pulse">
+                      Edition: Pending Tailoring
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Right Column: Information */}
+            {/* Right Column: Dynamic Credentials Gating */}
             <div className="lg:col-span-7 flex flex-col gap-12" style={{ animation: 'fadeIn 0.6s ease-out 0.2s both' }}>
               <header className="flex justify-between items-start gap-8">
                 <div className="flex-1">
@@ -90,37 +186,42 @@ function PassportContent() {
                     <div className={`px-3 py-1 rounded-full text-[0.55rem] font-bold uppercase tracking-widest border ${
                       status === 'pending' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
                       status === 'in_production' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' :
+                      status === 'cancelled' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
                       'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
                     }`}>
-                      {status === 'pending' ? 'Awaiting Production' : 
-                       status === 'in_production' ? 'In production' : 
-                       'Authenticated'}
+                      {status === 'pending' ? 'Pending Production' : 
+                       status === 'in_production' ? 'In Production' : 
+                       status === 'cancelled' ? 'Cancelled' : 
+                       'Authenticated & Minted'}
                     </div>
                   </div>
                   <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">Garment Identity</h1>
                   <p className="text-[#888] leading-relaxed max-w-xl text-base md:text-lg font-light">
-                    {status === 'pending' ? 'Your garment has been reserved.' :
-                     status === 'in_production' ? 'Digital certificate ready. Production in progress.' :
-                     'Your 3 Piece Agbada is complete. The physical garment and digital record are now permanently linked.'}
+                    {status === 'pending' && 'Payment secured in trustless escrow. The design house is compiling orders to start manufacturing.'}
+                    {status === 'in_production' && 'Sourcing premium fabrics. Your specific unit is actively being structured on the tailoring line.'}
+                    {status === 'cancelled' && 'This order has been cancelled and funds are being returned to your escrow source.'}
+                    {isMinted && 'Physical garment successfully constructed. Digital passport metadata permanently minted onto the Solana ledger.'}
                   </p>
                 </div>
 
-                {/* Share/Verify Button */}
-                <button 
-                  onClick={() => setShowQR(!showQR)}
-                  className="flex flex-col items-center gap-3 group shrink-0"
-                >
-                  <div className="w-16 h-16 rounded-[1.5rem] bg-white/[0.03] border border-white/10 flex items-center justify-center group-hover:bg-white/[0.06] transition-all group-hover:scale-105 shadow-2xl">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M7 7h.01M17 7h.01M17 17h.01M7 17h.01"/>
-                    </svg>
-                  </div>
-                  <span className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#444] group-hover:text-white transition-colors">Verify</span>
-                </button>
+                {/* Share/Verify (Visible ONLY if produced/minted) */}
+                {isMinted && (
+                  <button 
+                    onClick={() => setShowQR(!showQR)}
+                    className="flex flex-col items-center gap-3 group shrink-0"
+                  >
+                    <div className="w-16 h-16 rounded-[1.5rem] bg-white/[0.03] border border-white/10 flex items-center justify-center group-hover:bg-white/[0.06] transition-all group-hover:scale-105 shadow-2xl">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M7 7h.01M17 7h.01M17 17h.01M7 17h.01"/>
+                      </svg>
+                    </div>
+                    <span className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#444] group-hover:text-white transition-colors">Verify</span>
+                  </button>
+                )}
               </header>
 
               {/* Social Verify Modal */}
-              {showQR && (
+              {showQR && isMinted && (
                 <div className="card-glass p-10 md:p-14 flex flex-col items-center animate-scale-in border-white/20 relative rounded-[2.5rem]">
                   <button 
                     onClick={() => setShowQR(false)}
@@ -138,48 +239,89 @@ function PassportContent() {
                   <div className="text-center">
                     <h4 className="text-sm font-bold uppercase tracking-[0.25em] mb-3 text-white">Authenticity Shield</h4>
                     <p className="text-[0.65rem] text-[#666] max-w-[260px] leading-relaxed mx-auto uppercase tracking-widest font-medium">
-                      Present this code for scanning to verify ownership on Circuit.
+                      Scan this QR code to verify physical ownership verification on the Circuit Ledger.
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Specs Grid */}
+              {/* Dynamic Gated Credentials Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Serial', value: order.garment_serial || '—' },
-                  { label: 'Size', value: order.size || 'M' },
-                  { label: 'Edition', value: `01/${MAX_SUPPLY}` },
-                  { label: 'Made in', value: 'Nigeria' },
+                  { label: 'Edition', value: order.garment_serial ? formatSerialNumber(order.garment_serial, activeEdition.max_supply) : 'Locked (Pending Production)' },
+                  { label: 'Size', value: order.size || 'Medium' },
+                  { label: 'Collection Cap', value: `${activeEdition.max_supply} Units` },
+                  { label: 'Origin', value: 'Nigeria' },
                 ].map((stat, i) => (
-                  <div key={i} className="p-6 rounded-3xl bg-white/[0.02] border border-white/10">
+                  <div key={i} className="p-6 rounded-3xl bg-white/[0.02] border border-white/10 flex flex-col justify-between min-h-[110px]">
                     <span className="block text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#444] mb-2">{stat.label}</span>
-                    <span className="text-lg font-bold tracking-tight">{stat.value}</span>
+                    <span className={`text-base md:text-lg font-bold tracking-tight ${!order.garment_serial && stat.label === 'Edition' ? 'text-amber-500/80 font-mono text-sm' : ''}`}>
+                      {stat.value}
+                    </span>
                   </div>
                 ))}
               </div>
 
-              {/* Garment Details Timeline */}
+              {/* Dynamic Gated Ledger details */}
+              {isMinted ? (
+                <div className="card-glass p-6 md:p-8 border-white/5 flex flex-col gap-4 animate-fade-in">
+                  <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#666]">Ledger Signature Credentials</span>
+                  <div className="space-y-4 text-xs font-mono">
+                    <div className="flex justify-between items-center py-2 border-b border-white/5">
+                      <span className="text-[#444]">Digital Registry Address</span>
+                      <a href={solscanTxUrl(order.tx_signature)} target="_blank" rel="noopener" className="text-white hover:underline truncate max-w-[200px] text-right">
+                        {order.mint_address || 'Mint address loading...'}
+                      </a>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-white/5">
+                      <span className="text-[#444]">Blockchain Escrow Contract</span>
+                      <span className="text-emerald-400 truncate max-w-[200px] text-right">{order.escrow_pda}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-[#444]">Escrow Funds Secured</span>
+                      <span className="text-white">{order.amount_sol} SOL</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="card-glass p-6 md:p-8 border-white/5 bg-amber-500/[0.01] border-amber-500/10 flex flex-col gap-4 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    <span className="text-[0.65rem] font-bold uppercase tracking-widest text-amber-500">Gated Passport Mint</span>
+                  </div>
+                  <p className="text-xs text-[#888] leading-relaxed">
+                    Digital passport minting is secured on-chain and triggers automatically once the physical garment completes manufacturing (transitioned to "Produced" or higher by the collection designer).
+                  </p>
+                </div>
+              )}
+
+              {/* Dynamic Journey Timeline */}
               <div className="flex flex-col gap-8 mt-4">
-                <h4 className="text-[0.65rem] font-bold uppercase tracking-[0.3em] text-[#666]">Garment Journey</h4>
+                <h4 className="text-[0.65rem] font-bold uppercase tracking-[0.3em] text-[#666]">Garment Lifecycle</h4>
                 <div className="space-y-2">
                   <TimelineItem 
                     date={new Date(order.created_at).toLocaleDateString()} 
-                    title="Payment Secured" 
-                    desc="Your payment is held securely until your garment arrives."
+                    title="Order Placed & Escrow Secured" 
+                    desc="Escrow deposit recorded. Funds are secured on-chain."
                     active={true}
                   />
                   <TimelineItem 
-                    date="—" 
-                    title="In production" 
-                    desc="Materials sourced. Production begins."
-                    active={status !== 'pending'}
+                    date={status === 'in_production' || isMinted ? 'Active' : '—'} 
+                    title="In Production" 
+                    desc="Raw fabrics matched. The tailoring queue is working on your piece."
+                    active={status !== 'pending' && status !== 'cancelled'}
                   />
                   <TimelineItem 
-                    date="—" 
-                    title="Physical Transfer" 
-                    desc="Quality checked and on its way to you."
-                    active={status === 'delivered' || status === 'verified'}
+                    date={isMinted ? 'Minted' : '—'} 
+                    title="Passport Generated & Produced" 
+                    desc="Garment completed. NFC signature loaded, and Solana passport minted."
+                    active={isMinted}
+                  />
+                  <TimelineItem 
+                    date={status === 'shipped' || status === 'delivered' ? 'Shipped' : '—'} 
+                    title="Shipment & Transfer" 
+                    desc={order.shipment_details || 'Waybill code and courier details pending physical release.'}
+                    active={['shipped', 'delivered'].includes(status)}
                   />
                 </div>
               </div>

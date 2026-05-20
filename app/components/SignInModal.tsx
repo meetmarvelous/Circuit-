@@ -33,6 +33,16 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
     onClose();
   };
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -41,7 +51,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
       <div className="absolute inset-0 bg-black/80 backdrop-blur-[20px]" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative card-glass max-w-[400px] w-full p-8 flex flex-col gap-6" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+      <div className="relative card-glass max-w-[400px] w-full p-8 flex flex-col gap-6 max-h-[90vh] overflow-y-auto no-scrollbar" style={{ animation: 'fadeIn 0.3s ease-out' }}>
         {/* Close */}
         <button
           onClick={onClose}

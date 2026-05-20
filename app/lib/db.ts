@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import { genAddress } from './utils';
+
 
 // ── Supabase Configuration ───────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -209,3 +211,154 @@ export async function getUserOrders(email: string) {
   }
   return [];
 }
+
+// ── Editions / Collections ───────────────────────────────────────────
+
+export async function getEditions() {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('editions')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: true });
+    
+    if (!error) return data || [];
+  }
+  
+  // Fallback default edition
+  return [{
+    id: 'drop-zero',
+    name: '3 Piece Agbada',
+    image_url: '/satin.png',
+    description: 'Fashion sold before it’s made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.',
+    price_sol: 0.8,
+    has_variable_prices: false,
+    prices_by_size: { 'Small': 0.8, 'Medium': 0.8, 'Large': 0.8, 'Extra Large': 0.8 },
+    max_supply: 40,
+    fabric: 'Duchess satin',
+    headpiece: 'Velvet',
+    embroidery: 'Metallic thread',
+    is_active: true
+  }];
+}
+
+export async function getEditionById(id: string) {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('editions')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    
+    if (!error && data) return data;
+  }
+  
+  // Fallback
+  if (id === 'drop-zero') {
+    return {
+      id: 'drop-zero',
+      name: '3 Piece Agbada',
+      image_url: '/satin.png',
+      description: 'Fashion sold before it’s made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.',
+      price_sol: 0.8,
+      has_variable_prices: false,
+      prices_by_size: { 'Small': 0.8, 'Medium': 0.8, 'Large': 0.8, 'Extra Large': 0.8 },
+      max_supply: 40,
+      fabric: 'Duchess satin',
+      headpiece: 'Velvet',
+      embroidery: 'Metallic thread',
+      is_active: true
+    };
+  }
+  return null;
+}
+
+export async function saveEdition(editionData: any) {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('editions')
+      .upsert(editionData, { onConflict: 'id' })
+      .select();
+    
+    if (error) console.error('Supabase Save Edition Error:', error);
+    return data;
+  }
+  return null;
+}
+
+// ── Complete Order Lifecycle Management ──────────────────────────────
+
+export async function updateOrderStatusLifecycle(
+  orderId: string,
+  status: string,
+  garmentSerial?: string
+) {
+  if (supabase) {
+    const updatePayload: any = { status };
+    if (garmentSerial) {
+      updatePayload.garment_serial = garmentSerial;
+    }
+
+    // Auto-mint (generate public address) if transitioning to produced, shipped, or delivered
+    if (['produced', 'shipped', 'delivered'].includes(status)) {
+      const { data: currentOrder } = await supabase
+        .from('orders')
+        .select('mint_address')
+        .eq('id', orderId)
+        .maybeSingle();
+
+      if (currentOrder && !currentOrder.mint_address) {
+        updatePayload.mint_address = genAddress();
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('orders')
+      .update(updatePayload)
+      .eq('id', orderId)
+      .select();
+
+    if (error) console.error('Supabase Update Lifecycle Error:', error);
+    return data;
+  }
+
+  // Fallback: Local Storage
+  if (typeof window !== 'undefined') {
+    const orders = JSON.parse(localStorage.getItem('circuit_orders') || '[]');
+    const updatedOrders = orders.map((o: any) => {
+      if (o.id === orderId) {
+        const updated = { ...o, status };
+        if (garmentSerial) updated.garment_serial = garmentSerial;
+        if (['produced', 'shipped', 'delivered'].includes(status) && !o.mint_address) {
+          updated.mint_address = genAddress();
+        }
+        return updated;
+      }
+      return o;
+    });
+    localStorage.setItem('circuit_orders', JSON.stringify(updatedOrders));
+  }
+}
+
+export async function updateOrderShipmentDetails(orderId: string, details: string) {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ shipment_details: details })
+      .eq('id', orderId)
+      .select();
+
+    if (error) console.error('Supabase Update Shipment Details Error:', error);
+    return data;
+  }
+
+  // Fallback: Local Storage
+  if (typeof window !== 'undefined') {
+    const orders = JSON.parse(localStorage.getItem('circuit_orders') || '[]');
+    const updatedOrders = orders.map((o: any) => 
+      o.id === orderId ? { ...o, shipment_details: details } : o
+    );
+    localStorage.setItem('circuit_orders', JSON.stringify(updatedOrders));
+  }
+}
+
