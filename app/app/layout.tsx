@@ -39,6 +39,11 @@ export default function RootLayout({
       lang="en"
       className={`${montserrat.variable} ${outfit.variable} ${jetbrainsMono.variable} h-full`}
     >
+      <head>
+        <title>Circuit</title>
+        <link rel="icon" href="/logo/logo_icon_white.svg" type="image/svg+xml" />
+        <meta name="description" content="Made-to-order fashion on Solana blockchain" />
+      </head>
       <body className="min-h-full flex flex-col bg-black text-white font-body antialiased overflow-x-hidden">
         <ClientProviders>
           {!isAdminPage && <Navbar />}
