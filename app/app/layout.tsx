@@ -43,6 +43,20 @@ export default function RootLayout({
         <title>Circuit</title>
         <link rel="icon" href="/logo/logo_icon_white.svg" type="image/svg+xml" />
         <meta name="description" content="Made-to-order fashion on Solana blockchain" />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://circuit.fashion" />
+        <meta property="og:title" content="Circuit" />
+        <meta property="og:description" content="Made-to-order fashion. Nothing is manufactured until you confirm. Your payment is held in trustless escrow — secured by code." />
+        <meta property="og:image" content="https://circuit.fashion/logo/logo_main.svg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:site_name" content="Circuit" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Circuit" />
+        <meta name="twitter:description" content="Made-to-order fashion on Solana blockchain" />
+        <meta name="twitter:image" content="https://circuit.fashion/logo/logo_main.svg" />
       </head>
       <body className="min-h-full flex flex-col bg-black text-white font-body antialiased overflow-x-hidden">
         <ClientProviders>
