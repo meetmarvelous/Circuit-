@@ -215,7 +215,7 @@ export default function ConfirmPage() {
                   className="bg-[#0D0D0D] border border-white/[0.08] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-white/20 h-20 resize-none"
                 />
                 <p className="text-[0.65rem] text-[#666] italic mt-1 leading-relaxed">
-                  *Address registration logs your shipping destination. Actual dispatch and logistics comments will update in your purchase archives.
+                  *Address submission doesn't guarantee doorstep delivery. Pickup details will be emailed once your order is ready
                 </p>
               </div>
             </div>

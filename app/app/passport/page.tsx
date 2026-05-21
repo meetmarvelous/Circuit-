@@ -197,8 +197,8 @@ function PassportContent() {
                   </div>
                   <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">Garment Identity</h1>
                   <p className="text-[#888] leading-relaxed max-w-xl text-base md:text-lg font-light">
-                    {status === 'pending' && 'Payment secured in trustless escrow. The design house is compiling orders to start manufacturing.'}
-                    {status === 'in_production' && 'Sourcing premium fabrics. Your specific unit is actively being structured on the tailoring line.'}
+                    {status === 'pending' && 'Payment held securely in escrow.'}
+                    {status === 'in_production' && 'Your piece is being made.'}
                     {status === 'cancelled' && 'This order has been cancelled and funds are being returned to your escrow source.'}
                     {isMinted && 'Physical garment successfully constructed. Digital passport metadata permanently minted onto the Solana ledger.'}
                   </p>
@@ -287,10 +287,10 @@ function PassportContent() {
                 <div className="card-glass p-6 md:p-8 border-white/5 bg-amber-500/[0.01] border-amber-500/10 flex flex-col gap-4 animate-pulse">
                   <div className="flex items-center gap-3">
                     <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                    <span className="text-[0.65rem] font-bold uppercase tracking-widest text-amber-500">Gated Passport Mint</span>
+                    <span className="text-[0.65rem] font-bold uppercase tracking-widest text-amber-500">Passport Activation</span>
                   </div>
                   <p className="text-xs text-[#888] leading-relaxed">
-                    Digital passport minting is secured on-chain and triggers automatically once the physical garment completes manufacturing (transitioned to "Produced" or higher by the collection designer).
+                    Your digital passport activates automatically once your garment is completed.
                   </p>
                 </div>
               )}
@@ -301,26 +301,26 @@ function PassportContent() {
                 <div className="space-y-2">
                   <TimelineItem 
                     date={new Date(order.created_at).toLocaleDateString()} 
-                    title="Order Placed & Escrow Secured" 
-                    desc="Escrow deposit recorded. Funds are secured on-chain."
+                    title="Order Confirmed" 
+                    desc="Payment secured in escrow."
                     active={true}
                   />
                   <TimelineItem 
                     date={status === 'in_production' || isMinted ? 'Active' : '—'} 
                     title="In Production" 
-                    desc="Raw fabrics matched. The tailoring queue is working on your piece."
+                    desc="Your piece is being made."
                     active={status !== 'pending' && status !== 'cancelled'}
                   />
                   <TimelineItem 
                     date={isMinted ? 'Minted' : '—'} 
-                    title="Passport Generated & Produced" 
-                    desc="Garment completed. NFC signature loaded, and Solana passport minted."
+                    title="Digital Passport Ready" 
+                    desc="Garment ready. Digital passport ready."
                     active={isMinted}
                   />
                   <TimelineItem 
                     date={status === 'shipped' || status === 'delivered' ? 'Shipped' : '—'} 
-                    title="Shipment & Transfer" 
-                    desc={order.shipment_details || 'Waybill code and courier details pending physical release.'}
+                    title="Shipment" 
+                    desc={order.shipment_details || 'Tracking details available after dispatch.'}
                     active={['shipped', 'delivered'].includes(status)}
                   />
                 </div>

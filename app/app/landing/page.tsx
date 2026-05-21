@@ -96,7 +96,7 @@ export default function LandingPage() {
                 Select Your Edition.
               </h2>
               <p className="text-[#888] mt-4 text-sm max-w-md mx-auto">
-                Explore our active design runs. Click an edition card to expand technical specs and proceed to purchase.
+                Explore active editions.
               </p>
             </div>
 
@@ -131,7 +131,7 @@ export default function LandingPage() {
                           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
                           <div className="absolute bottom-6 left-6 right-6">
                             <span className="text-[0.6rem] font-bold tracking-widest text-white/40 uppercase block mb-1">
-                              {edition.max_supply} Units Cap
+                              Limited to {edition.max_supply} pieces.
                             </span>
                             <h3 className="text-xl md:text-2xl font-bold text-white mb-2">{edition.name}</h3>
                             <div className="flex items-center justify-between">
@@ -161,7 +161,7 @@ export default function LandingPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                       <div className="space-y-6">
                         <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40 block">
-                          Technical Specifications — {selectedEdition.name}
+                          Details
                         </span>
                         <h3 className="text-3xl md:text-4xl font-bold">{selectedEdition.name}</h3>
                         <p className="text-[#888] leading-relaxed text-sm md:text-base">
@@ -206,7 +206,7 @@ export default function LandingPage() {
                             )}
                           </div>
                           <p className="text-xs text-[#888] mb-6 leading-relaxed">
-                            Funds are locked in a trustless escrow program and released only upon your physical scanned delivery confirmation.
+                            Your payment stays secure until your order is delivered.
                           </p>
                           <a
                             href={`/drop?edition=${selectedEdition.id}`}
@@ -232,13 +232,12 @@ export default function LandingPage() {
                 Why Circuit Exists
               </span>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-8 leading-tight">
-                Fashion still produces what it hopes will sell.
+                Fashion often produces before real demand exists.
               </h2>
               <div className="space-y-6 text-[#888] leading-relaxed text-sm md:text-base">
-                <p>Garments are often designed, manufactured, and marketed before real demand is known.</p>
                 <p>When those bets fail, the result is excess inventory, markdowns, and waste.</p>
-                <p>The problem is not fashion itself. The problem is production happening too early.</p>
-                <p className="text-white font-medium">Circuit reverses that order by making production conditional on confirmed demand.</p>
+                <p>Circuit changes the order.</p>
+                <p className="text-white font-medium">Production only begins after demand is confirmed.</p>
               </div>
             </div>
             
@@ -248,7 +247,7 @@ export default function LandingPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-8 left-8">
                    <div className="w-12 h-0.5 bg-white mb-4" />
-                   <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Active Selection</p>
+                    <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Current Editions</p>
                 </div>
               </div>
             </div>
@@ -282,9 +281,6 @@ export default function LandingPage() {
         <section className="relative h-[70vh] md:h-[90vh] overflow-hidden border-y border-white/10">
           <Image src="/satin.png" alt="Craft Detail" fill className="object-cover opacity-40 brightness-75" />
           <div className="absolute inset-0 flex items-center justify-center text-center p-8">
-            <h3 className="text-3xl md:text-6xl font-bold tracking-tighter max-w-4xl leading-tight">
-              A physical garment with a digital certificate.
-            </h3>
           </div>
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-px h-20 bg-gradient-to-b from-white/0 to-white/40" />
         </section>
@@ -295,7 +291,7 @@ export default function LandingPage() {
             <div>
               <h2 className="text-4xl font-bold tracking-tight">FAQ</h2>
               <p className="text-[#666] mt-4 text-sm leading-relaxed max-w-xs">
-                Addressing the specifics of our demand-first model.
+                FAQ
               </p>
             </div>
             <div className="lg:col-span-2">
@@ -341,7 +337,7 @@ export default function LandingPage() {
              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_#fff_0%,_transparent_70%)]" />
              <div className="relative z-10 max-w-2xl mx-auto">
                <h2 className="text-4xl md:text-6xl font-bold mb-8 tracking-tighter text-white">
-                 Be first to know about future runs.
+                 Get early access
                </h2>
                
                <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
