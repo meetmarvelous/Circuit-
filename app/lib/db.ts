@@ -214,13 +214,13 @@ export async function getUserOrders(email: string) {
 
 // ── Editions / Collections ───────────────────────────────────────────
 
-export async function getEditions() {
+export async function getEditions(activeOnly = true) {
   if (supabase) {
-    const { data, error } = await supabase
-      .from('editions')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: true });
+    let query = supabase.from('editions').select('*');
+    if (activeOnly) {
+      query = query.eq('is_active', true);
+    }
+    const { data, error } = await query.order('created_at', { ascending: true });
     
     if (!error) return data || [];
   }

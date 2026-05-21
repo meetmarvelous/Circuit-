@@ -48,6 +48,7 @@ export default function AdminDashboard() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedQR, setSelectedQR] = useState<Order | null>(null);
+  const [selectedOrdersEditionId, setSelectedOrdersEditionId] = useState<string | null>(null);
   const router = useRouter();
 
   // Lifecycle modifications states per order
@@ -118,8 +119,8 @@ export default function AdminDashboard() {
       });
       setEditableStates(statesMap);
 
-      // 2. Fetch Editions
-      const editionsList = await getEditions();
+      // 2. Fetch Editions (Fetch all for administrative visibility)
+      const editionsList = await getEditions(false);
       setEditions(editionsList || []);
     } catch (err) {
       console.error('Error querying dynamic dashboard data:', err);
@@ -149,17 +150,24 @@ export default function AdminDashboard() {
     );
   }
 
+  // Filter active orders based on selected edition for tab
+  const activeOrdersForTab = selectedOrdersEditionId === null
+    ? orders
+    : selectedOrdersEditionId === 'all'
+      ? orders
+      : orders.filter(o => o.drop_id === selectedOrdersEditionId);
+
   // Calculate dynamic stats
-  const totalRevenue = orders.reduce((acc, o) => acc + Number(o.amount_sol || 0), 0);
+  const totalRevenue = activeOrdersForTab.reduce((acc, o) => acc + Number(o.amount_sol || 0), 0);
   const stats = {
     totalRevenue,
-    totalClaims: orders.length,
-    inProduction: orders.filter(o => o.status === 'in_production').length,
-    produced: orders.filter(o => ['produced', 'shipped', 'delivered'].includes(o.status)).length,
-    pending: orders.filter(o => o.status === 'pending').length,
+    totalClaims: activeOrdersForTab.length,
+    inProduction: activeOrdersForTab.filter(o => o.status === 'in_production').length,
+    produced: activeOrdersForTab.filter(o => ['produced', 'shipped', 'delivered'].includes(o.status)).length,
+    pending: activeOrdersForTab.filter(o => o.status === 'pending').length,
   };
 
-  const filteredOrders = orders.filter(o => 
+  const filteredOrders = activeOrdersForTab.filter(o => 
     o.email.toLowerCase().includes(search.toLowerCase()) || 
     o.garment_serial?.toLowerCase().includes(search.toLowerCase()) ||
     o.drop_id.toLowerCase().includes(search.toLowerCase())
@@ -292,184 +300,327 @@ export default function AdminDashboard() {
         {/* Tab 1: Orders Lifecycle */}
         {activeTab === 'orders' && (
           <div>
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 print:hidden">
-              <header>
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#666] mb-3 block">
-                  Circuit — Identity Management
-                </span>
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Active Drops Control Hub</h1>
-                <p className="text-[#666] mt-3 text-sm max-w-md leading-relaxed">
-                  Refactor status lifecycles, log shipping waybills, and print digital-passport identity tags.
-                </p>
-              </header>
+            {/* Edition Selection Screen */}
+            {selectedOrdersEditionId === null ? (
+              <div>
+                <header className="mb-12">
+                  <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#666] mb-3 block font-mono">
+                    Circuit — Identity Management
+                  </span>
+                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Active Drops Control Hub</h1>
+                  <p className="text-[#666] mt-3 text-sm max-w-md leading-relaxed">
+                    Select a drop collection below to manage status lifecycles, log waybills, and print digital-passport identity tags.
+                  </p>
+                </header>
 
-              <div className="relative group w-full md:w-80">
-                <input 
-                  type="text"
-                  placeholder="Search email, serial, drop ID..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-white/[0.03] border border-white/10 px-6 py-3 rounded-full text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-[#333]"
-                />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Global Overview Card */}
+                  <div 
+                    onClick={() => setSelectedOrdersEditionId('all')}
+                    className="card-glass p-6 flex flex-col justify-between min-h-[220px] border border-white/10 hover:border-white/40 cursor-pointer transition-all duration-300 hover:bg-white/[0.02] group"
+                  >
+                    <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <span className="text-[0.55rem] font-mono font-bold tracking-widest text-[#888] bg-white/5 border border-white/10 px-2 py-0.5 rounded uppercase">Global Overview</span>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      </div>
+                      <h3 className="text-xl font-bold text-white group-hover:text-white transition-colors">All Collection Runs</h3>
+                      <p className="text-[#666] mt-2 text-xs leading-relaxed">
+                        Access all orders, global logistics logs, and comprehensive platform statistics.
+                      </p>
+                    </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-12 print:hidden">
-              {[
-                { label: 'Total Revenue', value: `${stats.totalRevenue.toFixed(2)} SOL`, color: 'text-white' },
-                { label: 'Total Claims', value: `${stats.totalClaims} Runs`, color: 'text-white' },
-                { label: 'Awaiting Tailor', value: stats.pending, color: 'text-amber-500' },
-                { label: 'In Production', value: stats.inProduction, color: 'text-blue-500' },
-                { label: 'Produced / Minted', value: stats.produced, color: 'text-emerald-500' },
-              ].map((stat, i) => (
-                <div key={i} className="card-glass p-6 border-white/[0.06]">
-                  <span className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#444] mb-2 block">{stat.label}</span>
-                  <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+                    <div className="flex justify-between items-center text-[0.6rem] font-mono text-white/50 pt-4 border-t border-white/5">
+                      <span>Total Claims: {orders.length}</span>
+                      <span>Total Revenue: {orders.reduce((acc, o) => acc + Number(o.amount_sol || 0), 0).toFixed(2)} SOL</span>
+                    </div>
+                  </div>
+
+                  {/* Individual Editions */}
+                  {editions.map((ed) => {
+                    const edOrders = orders.filter(o => o.drop_id === ed.id);
+                    const edRevenue = edOrders.reduce((acc, o) => acc + Number(o.amount_sol || 0), 0);
+                    const edPending = edOrders.filter(o => o.status === 'pending').length;
+                    const edInProduction = edOrders.filter(o => o.status === 'in_production').length;
+
+                    return (
+                      <div 
+                        key={ed.id}
+                        onClick={() => setSelectedOrdersEditionId(ed.id)}
+                        className="card-glass p-6 flex flex-col justify-between min-h-[220px] border border-white/[0.06] hover:border-white/30 cursor-pointer transition-all duration-300 hover:bg-white/[0.02] group"
+                      >
+                        <div>
+                          <div className="flex justify-between items-start gap-4 mb-4">
+                            <span className="text-[0.55rem] font-mono text-white/40 block truncate max-w-[150px]">
+                              Slug: {ed.id}
+                            </span>
+                            <span className={`text-[0.55rem] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                              ed.is_active 
+                                ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' 
+                                : 'text-white/30 bg-white/5 border border-white/5'
+                            }`}>
+                              {ed.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+
+                          <div className="flex gap-4">
+                            <div className="w-12 h-16 rounded-lg border border-white/10 relative overflow-hidden shrink-0">
+                              <Image src={ed.image_url || '/satin.png'} alt={ed.name} fill className="object-cover" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-lg font-bold text-white group-hover:text-white transition-colors truncate">
+                                {ed.name}
+                              </h3>
+                              <p className="text-[0.65rem] text-[#666] font-mono mt-1">
+                                Max Supply: {ed.max_supply} Units
+                              </p>
+                              <p className="text-[0.65rem] text-emerald-400 font-mono mt-0.5">
+                                Base: {ed.price_sol} SOL
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-[0.6rem] font-mono text-white/50 pt-4 border-t border-white/5">
+                          <span>Orders: {edOrders.length}</span>
+                          <span className="text-[#888]">
+                            Awaiting: {edPending} | In Prod: {edInProduction}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-
-            {/* Orders Table */}
-            {loading ? (
-              <div className="flex items-center justify-center py-20 print:hidden">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              </div>
-            ) : filteredOrders.length === 0 ? (
-              <div className="card-glass p-20 text-center border-dashed border-white/5 print:hidden">
-                <p className="text-[#444] font-medium">No matching orders found in active database.</p>
               </div>
             ) : (
-              <div className="grid gap-6 print:hidden">
-                {filteredOrders.map((order) => {
-                  const stateVal = editableStates[order.id] || { status: 'pending', serial: '', shipmentDetails: '' };
-                  const isMinted = ['produced', 'shipped', 'delivered'].includes(stateVal.status);
-
-                  return (
-                    <div key={order.id} className="card-glass p-6 md:p-8 flex flex-col gap-6 border-white/[0.06] hover:border-white/10">
-                      {/* Top Summary */}
-                      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-white/5">
-                        <div>
-                          <div className="flex items-center gap-3 mb-1">
-                            <span className="text-xs font-mono text-[#555]">Order Reference: #{order.id.slice(0, 12)}</span>
-                            <span className="text-xs font-mono text-white/40 bg-white/5 px-2 py-0.5 rounded uppercase">{order.drop_id}</span>
-                            {order.garment_serial && (
-                              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded uppercase font-semibold">
-                                Serial: {formatSerialNumber(order.garment_serial, editions.find(e => e.id === order.drop_id)?.max_supply)}
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="text-lg font-bold text-white">{order.email}</h3>
-                        </div>
-                        <div className="text-right">
-                          <span className="block text-[0.6rem] text-[#444] uppercase font-mono">Amount Paid</span>
-                          <span className="text-md font-bold text-white">{order.amount_sol} SOL | Size: {order.size || 'M'}</span>
-                        </div>
+              <div>
+                {/* Active Selection Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12 pb-6 border-b border-white/10 print:hidden">
+                  <div className="flex items-center gap-6">
+                    {selectedOrdersEditionId !== 'all' ? (
+                      <>
+                        {(() => {
+                          const ed = editions.find(e => e.id === selectedOrdersEditionId);
+                          return (
+                            <>
+                              <div className="w-16 h-20 rounded-xl border border-white/10 relative overflow-hidden shrink-0">
+                                <Image src={ed?.image_url || '/satin.png'} alt={ed?.name || ''} fill className="object-cover" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-3 mb-1">
+                                  <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#666] font-mono">
+                                    Circuit — Gated Controls
+                                  </span>
+                                  <span className={`text-[0.55rem] font-mono px-2 py-0.2 rounded uppercase ${
+                                    ed?.is_active 
+                                      ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' 
+                                      : 'text-white/30 bg-white/5 border border-white/5'
+                                  }`}>
+                                    {ed?.is_active ? 'Active' : 'Inactive'}
+                                  </span>
+                                </div>
+                                <h1 className="text-3xl font-bold tracking-tight">{ed?.name || 'Drop Collection'}</h1>
+                                <p className="text-[#666] mt-1.5 text-xs font-mono">
+                                  Slug: {selectedOrdersEditionId} | Supply: {ed?.max_supply} Cap | Fabric: {ed?.fabric}
+                                </p>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </>
+                    ) : (
+                      <div>
+                        <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#666] mb-1 block font-mono">
+                          Circuit — Identity Management
+                        </span>
+                        <h1 className="text-3xl font-bold tracking-tight">All Collection Runs</h1>
+                        <p className="text-[#666] mt-1.5 text-xs font-mono">
+                          Combined overview of active database order registries.
+                        </p>
                       </div>
+                    )}
+                  </div>
 
-                      {/* Interactive Configuration Layout */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        
-                        {/* Column 1: Status Dropdown & Serial */}
-                        <div className="space-y-4">
-                          <div className="flex flex-col gap-2">
-                            <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Lifecycle Status</label>
-                            <select
-                              value={stateVal.status}
-                              onChange={(e) => setEditableStates(prev => ({
-                                ...prev,
-                                [order.id]: { ...stateVal, status: e.target.value }
-                              }))}
-                              className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30"
-                            >
-                              <option value="pending">Pending (Escrow Locked)</option>
-                              <option value="in_production">In Production</option>
-                              <option value="produced">Produced (Generates Passport Mint)</option>
-                              <option value="shipped">Shipped</option>
-                              <option value="delivered">Delivered</option>
-                              <option value="cancelled">Cancelled</option>
-                            </select>
-                          </div>
-
-                          <div className="flex flex-col gap-2">
-                            <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Garment Serial</label>
-                            <input
-                              type="text"
-                              value={stateVal.serial}
-                              onChange={(e) => setEditableStates(prev => ({
-                                ...prev,
-                                [order.id]: { ...stateVal, serial: e.target.value }
-                              }))}
-                              placeholder="Auto-assigned if left blank"
-                              className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 font-mono"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Column 2: Logistics shipment Notes */}
-                        <div className="flex flex-col gap-2">
-                          <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Shipment Logistics Details</label>
-                          <textarea
-                            value={stateVal.shipmentDetails}
-                            onChange={(e) => setEditableStates(prev => ({
-                              ...prev,
-                              [order.id]: { ...stateVal, shipmentDetails: e.target.value }
-                            }))}
-                            placeholder="Courier waybill notes, tracking details, delivery comments..."
-                            className="w-full h-full min-h-[100px] bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 resize-none"
-                          />
-                        </div>
-
-                        {/* Column 3: Prints & Actions */}
-                        <div className="flex flex-col justify-between items-end min-h-[120px]">
-                          <div className="w-full flex gap-3">
-                            <a
-                              href={solscanTxUrl(order.tx_signature)}
-                              target="_blank"
-                              rel="noopener"
-                              className="btn-outline-circuit py-2.5 px-4 text-[0.65rem] text-center flex-1"
-                            >
-                              Registry Proof
-                            </a>
-                            
-                            {/* Printable gated strictly to Produced status or higher */}
-                            <button
-                              disabled={!isMinted}
-                              onClick={() => setSelectedQR(order)}
-                              className={`p-2.5 border rounded-full flex items-center justify-center shrink-0 transition-all ${
-                                isMinted 
-                                  ? 'border-white/20 hover:bg-white/5 text-white cursor-pointer' 
-                                  : 'border-white/5 text-white/10 cursor-not-allowed'
-                              }`}
-                              title={isMinted ? 'Generate Physical Identity QR Tag' : 'Printing locked (Garment must be Produced first)'}
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M7 7h.01M17 7h.01M17 17h.01M7 17h.01"/>
-                              </svg>
-                            </button>
-                          </div>
-
-                          <button
-                            onClick={() => saveOrderLifecycle(order.id)}
-                            disabled={processingId === order.id}
-                            className="btn-circuit w-full py-3.5 text-[0.7rem] justify-center mt-4"
-                          >
-                            <span>{processingId === order.id ? 'Saving Changes...' : 'Update Order Lifecycle'}</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Display delivery details if loaded */}
-                      {order.delivery_location && (
-                        <div className="mt-2 p-4 rounded-xl bg-amber-500/[0.02] border border-amber-500/10 text-xs flex flex-col gap-1">
-                          <span className="font-bold text-amber-500 uppercase tracking-widest text-[0.55rem]">Preferred Drop Destination</span>
-                          <span className="text-[#A3A3A3]">Location: {order.delivery_location} | Address: {order.delivery_address}</span>
-                        </div>
-                      )}
+                  <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+                    <div className="relative group w-full sm:w-64">
+                      <input 
+                        type="text"
+                        placeholder="Search email, serial..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full bg-white/[0.03] border border-white/10 px-5 py-2.5 rounded-full text-xs focus:outline-none focus:border-white/30 transition-all placeholder:text-[#333]"
+                      />
                     </div>
-                  );
-                })}
+                    
+                    <button 
+                      onClick={() => {
+                        setSelectedOrdersEditionId(null);
+                        setSearch('');
+                      }}
+                      className="px-5 py-2.5 rounded-full border border-white/10 hover:border-white text-xs font-bold uppercase tracking-wider transition-all text-white/60 hover:text-white"
+                    >
+                      ← Select Another Drop
+                    </button>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-12 print:hidden">
+                  {[
+                    { label: 'Total Revenue', value: `${stats.totalRevenue.toFixed(2)} SOL`, color: 'text-white' },
+                    { label: 'Total Claims', value: `${stats.totalClaims} Runs`, color: 'text-white' },
+                    { label: 'Awaiting Tailor', value: stats.pending, color: 'text-amber-500' },
+                    { label: 'In Production', value: stats.inProduction, color: 'text-blue-500' },
+                    { label: 'Produced / Minted', value: stats.produced, color: 'text-emerald-500' },
+                  ].map((stat, i) => (
+                    <div key={i} className="card-glass p-6 border-white/[0.06]">
+                      <span className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#444] mb-2 block">{stat.label}</span>
+                      <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Orders Table */}
+                {loading ? (
+                  <div className="flex items-center justify-center py-20 print:hidden">
+                    <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  </div>
+                ) : filteredOrders.length === 0 ? (
+                  <div className="card-glass p-20 text-center border-dashed border-white/5 print:hidden">
+                    <p className="text-[#444] font-medium">No matching orders found in active database.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-6 print:hidden">
+                    {filteredOrders.map((order) => {
+                      const stateVal = editableStates[order.id] || { status: 'pending', serial: '', shipmentDetails: '' };
+                      const isMinted = ['produced', 'shipped', 'delivered'].includes(stateVal.status);
+
+                      return (
+                        <div key={order.id} className="card-glass p-6 md:p-8 flex flex-col gap-6 border-white/[0.06] hover:border-white/10">
+                          {/* Top Summary */}
+                          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-white/5">
+                            <div>
+                              <div className="flex items-center gap-3 mb-1">
+                                <span className="text-xs font-mono text-[#555]">Order Reference: #{order.id.slice(0, 12)}</span>
+                                <span className="text-xs font-mono text-white/40 bg-white/5 px-2 py-0.5 rounded uppercase">{order.drop_id}</span>
+                                {order.garment_serial && (
+                                  <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded uppercase font-semibold">
+                                    Serial: {formatSerialNumber(order.garment_serial, editions.find(e => e.id === order.drop_id)?.max_supply)}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="text-lg font-bold text-white">{order.email}</h3>
+                            </div>
+                            <div className="text-right">
+                              <span className="block text-[0.6rem] text-[#444] uppercase font-mono">Amount Paid</span>
+                              <span className="text-md font-bold text-white">{order.amount_sol} SOL | Size: {order.size || 'M'}</span>
+                            </div>
+                          </div>
+
+                          {/* Interactive Configuration Layout */}
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            
+                            {/* Column 1: Status Dropdown & Serial */}
+                            <div className="space-y-4">
+                              <div className="flex flex-col gap-2">
+                                <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Lifecycle Status</label>
+                                <select
+                                  value={stateVal.status}
+                                  onChange={(e) => setEditableStates(prev => ({
+                                    ...prev,
+                                    [order.id]: { ...stateVal, status: e.target.value }
+                                  }))}
+                                  className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 font-mono"
+                                >
+                                  <option value="pending">Pending (Escrow Locked)</option>
+                                  <option value="in_production">In Production</option>
+                                  <option value="produced">Produced (Generates Passport Mint)</option>
+                                  <option value="shipped">Shipped</option>
+                                  <option value="delivered">Delivered</option>
+                                  <option value="cancelled">Cancelled</option>
+                                </select>
+                              </div>
+
+                              <div className="flex flex-col gap-2">
+                                <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Garment Serial</label>
+                                <input
+                                  type="text"
+                                  value={stateVal.serial}
+                                  onChange={(e) => setEditableStates(prev => ({
+                                    ...prev,
+                                    [order.id]: { ...stateVal, serial: e.target.value }
+                                  }))}
+                                  placeholder="Auto-assigned if left blank"
+                                  className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 font-mono"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Column 2: Logistics shipment Notes */}
+                            <div className="flex flex-col gap-2">
+                              <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Shipment Logistics Details</label>
+                              <textarea
+                                value={stateVal.shipmentDetails}
+                                onChange={(e) => setEditableStates(prev => ({
+                                  ...prev,
+                                  [order.id]: { ...stateVal, shipmentDetails: e.target.value }
+                                }))}
+                                placeholder="Courier waybill notes, tracking details, delivery comments..."
+                                className="w-full h-full min-h-[100px] bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 resize-none"
+                              />
+                            </div>
+
+                            {/* Column 3: Prints & Actions */}
+                            <div className="flex flex-col justify-between items-end min-h-[120px]">
+                              <div className="w-full flex gap-3">
+                                <a
+                                  href={solscanTxUrl(order.tx_signature)}
+                                  target="_blank"
+                                  rel="noopener"
+                                  className="btn-outline-circuit py-2.5 px-4 text-[0.65rem] text-center flex-1 font-mono uppercase"
+                                >
+                                  Registry Proof
+                                </a>
+                                
+                                {/* Printable gated strictly to Produced status or higher */}
+                                <button
+                                  disabled={!isMinted}
+                                  onClick={() => setSelectedQR(order)}
+                                  className={`p-2.5 border rounded-full flex items-center justify-center shrink-0 transition-all ${
+                                    isMinted 
+                                      ? 'border-white/20 hover:bg-white/5 text-white cursor-pointer' 
+                                      : 'border-white/5 text-white/10 cursor-not-allowed'
+                                  }`}
+                                  title={isMinted ? 'Generate Physical Identity QR Tag' : 'Printing locked (Garment must be Produced first)'}
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M7 7h.01M17 7h.01M17 17h.01M7 17h.01"/>
+                                  </svg>
+                                </button>
+                              </div>
+
+                              <button
+                                onClick={() => saveOrderLifecycle(order.id)}
+                                disabled={processingId === order.id}
+                                className="btn-circuit w-full py-3.5 text-[0.7rem] justify-center mt-4"
+                              >
+                                <span>{processingId === order.id ? 'Saving Changes...' : 'Update Order Lifecycle'}</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Display delivery details if loaded */}
+                          {order.delivery_location && (
+                            <div className="mt-2 p-4 rounded-xl bg-amber-500/[0.02] border border-amber-500/10 text-xs flex flex-col gap-1">
+                              <span className="font-bold text-amber-500 uppercase tracking-widest text-[0.55rem]">Preferred Drop Destination</span>
+                              <span className="text-[#A3A3A3]">Location: {order.delivery_location} | Address: {order.delivery_address}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -479,12 +630,12 @@ export default function AdminDashboard() {
         {activeTab === 'collections' && (
           <div>
             <header className="mb-12">
-              <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#666] mb-3 block">
+              <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#666] mb-3 block font-mono">
                 Circuit — Collection Architect
               </span>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Active Collections Run</h1>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Drop Collections Manager</h1>
               <p className="text-[#666] mt-3 text-sm max-w-md leading-relaxed">
-                Add multiple editions dynamically, enable size variable prices overrides, and configure technical spec fields.
+                Add multiple editions dynamically, enable size variable prices overrides, toggle storefront visibility, and configure spec fields.
               </p>
             </header>
 
@@ -492,12 +643,29 @@ export default function AdminDashboard() {
               {/* Left Column: Form Editor */}
               <div className="lg:col-span-5 card-glass p-8 border-white/10">
                 <form onSubmit={handleEditionSubmit} className="space-y-6">
-                  <div className="flex justify-between items-baseline">
-                    <h3 className="text-xl font-bold">{selectedEdition ? 'Edit Collection' : 'Create Drop'}</h3>
-                    {selectedEdition && (
-                      <button type="button" onClick={resetEditionForm} className="text-xs text-white/50 hover:text-white">
-                        Clear Form
-                      </button>
+                  <div>
+                    <div className="flex justify-between items-baseline mb-2">
+                      <h3 className="text-xl font-bold">
+                        {selectedEdition ? 'Modify Drop specs' : 'Architect Drop specs'}
+                      </h3>
+                      {selectedEdition && (
+                        <button 
+                          type="button" 
+                          onClick={resetEditionForm} 
+                          className="text-[0.65rem] text-white/40 hover:text-white transition-all uppercase tracking-wider font-mono font-bold"
+                        >
+                          Cancel / Reset
+                        </button>
+                      )}
+                    </div>
+                    {selectedEdition ? (
+                      <p className="text-[0.6rem] text-amber-500/80 font-medium tracking-wide uppercase mt-1 mb-6 leading-relaxed font-mono">
+                        ⚠️ Slug ID "{selectedEdition.id}" is immutable to protect active order databases.
+                      </p>
+                    ) : (
+                      <p className="text-[0.6rem] text-[#666] tracking-wide uppercase mt-1 mb-6 leading-relaxed font-mono">
+                        Register a new physical/digital garment run to Supabase.
+                      </p>
                     )}
                   </div>
 
@@ -509,7 +677,7 @@ export default function AdminDashboard() {
                       disabled={!!selectedEdition}
                       onChange={(e) => setEditionForm(prev => ({ ...prev, id: e.target.value }))}
                       placeholder="e.g. drop-one"
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 disabled:opacity-50"
+                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 disabled:opacity-30 disabled:cursor-not-allowed font-mono"
                     />
                   </div>
 
@@ -530,7 +698,7 @@ export default function AdminDashboard() {
                       type="text"
                       value={editionForm.image_url}
                       onChange={(e) => setEditionForm(prev => ({ ...prev, image_url: e.target.value }))}
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30"
+                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 font-mono"
                     />
                   </div>
 
@@ -583,7 +751,7 @@ export default function AdminDashboard() {
                         type="number"
                         value={editionForm.max_supply}
                         onChange={(e) => setEditionForm(prev => ({ ...prev, max_supply: Number(e.target.value) }))}
-                        className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30"
+                        className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 font-mono"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -593,19 +761,33 @@ export default function AdminDashboard() {
                         step="0.01"
                         value={editionForm.price_sol}
                         onChange={(e) => setEditionForm(prev => ({ ...prev, price_sol: Number(e.target.value) }))}
-                        className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30"
+                        className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 font-mono"
                       />
                     </div>
                   </div>
 
-                  {/* Toggle size pricing */}
+                  {/* Toggle Storefront Active Status */}
                   <div className="flex items-center gap-3 py-2 border-y border-white/5">
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      checked={editionForm.is_active}
+                      onChange={(e) => setEditionForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                      className="w-4 h-4 accent-white cursor-pointer bg-black border border-white/15 rounded focus:ring-0 focus:ring-offset-0"
+                    />
+                    <label htmlFor="is_active" className="text-xs text-[#A3A3A3] font-bold select-none cursor-pointer">
+                      Show in storefront catalog (Active status)
+                    </label>
+                  </div>
+
+                  {/* Toggle size pricing */}
+                  <div className="flex items-center gap-3 py-2 border-b border-white/5">
                     <input
                       type="checkbox"
                       id="has_variable_prices"
                       checked={editionForm.has_variable_prices}
                       onChange={(e) => setEditionForm(prev => ({ ...prev, has_variable_prices: e.target.checked }))}
-                      className="w-4 h-4 accent-white cursor-pointer"
+                      className="w-4 h-4 accent-white cursor-pointer bg-black border border-white/15 rounded focus:ring-0 focus:ring-offset-0"
                     />
                     <label htmlFor="has_variable_prices" className="text-xs text-[#A3A3A3] font-bold select-none cursor-pointer">
                       Enable size-based variable prices override
@@ -637,7 +819,7 @@ export default function AdminDashboard() {
                   )}
 
                   {/* Submit Button */}
-                  <button type="submit" className="btn-circuit w-full justify-center py-4 text-xs">
+                  <button type="submit" className="btn-circuit w-full justify-center py-4 text-xs font-bold uppercase tracking-wider">
                     <span>{selectedEdition ? 'Sync Drop Collection' : 'Architect Drop Collection'}</span>
                   </button>
                 </form>
@@ -645,11 +827,29 @@ export default function AdminDashboard() {
 
               {/* Right Column: Grid List of collections */}
               <div className="lg:col-span-7 space-y-6">
-                <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#666] block">
-                  Active Dynamic Collections Directory ({editions.length})
+                <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#666] block font-mono">
+                  Collections Directory ({editions.length})
                 </span>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Dashed "+ Architect New Drop" Card */}
+                  <div 
+                    onClick={resetEditionForm}
+                    className={`card-glass p-5 flex flex-col justify-center items-center gap-3 overflow-hidden border border-dashed cursor-pointer hover:bg-white/[0.02] transition-all duration-300 min-h-[160px] group ${
+                      !selectedEdition 
+                        ? 'border-white bg-white/[0.04]' 
+                        : 'border-white/20 hover:border-white/40'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-lg font-bold text-white/40 group-hover:text-white group-hover:border-white/40 transition-colors">
+                      +
+                    </div>
+                    <div className="text-center">
+                      <h4 className="font-bold text-white text-sm">Architect New Drop</h4>
+                      <span className="text-[0.6rem] font-mono text-white/40 block mt-1">Configure & launch a new collection</span>
+                    </div>
+                  </div>
+
                   {editions.map((ed) => (
                     <div 
                       key={ed.id} 
@@ -662,10 +862,19 @@ export default function AdminDashboard() {
                         <div className="w-16 h-20 rounded-xl border border-white/10 relative overflow-hidden shrink-0">
                           <Image src={ed.image_url || '/satin.png'} alt={ed.name} fill className="object-cover" />
                         </div>
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-white truncate text-md">{ed.name}</h4>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="font-bold text-white truncate text-md">{ed.name}</h4>
+                            <span className={`text-[0.55rem] font-mono px-2 py-0.2 rounded font-bold uppercase shrink-0 ${
+                              ed.is_active 
+                                ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' 
+                                : 'text-white/30 bg-white/5 border border-white/5'
+                            }`}>
+                              {ed.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
                           <span className="text-[0.6rem] font-mono text-white/40 block mt-0.5">Slug ID: {ed.id}</span>
-                          <span className="text-xs text-emerald-400 font-bold block mt-2">
+                          <span className="text-xs text-emerald-400 font-bold block mt-2 font-mono">
                             {ed.has_variable_prices ? 'Variable Sizing' : `${ed.price_sol} SOL`}
                           </span>
                         </div>
