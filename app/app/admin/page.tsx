@@ -217,7 +217,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Manage Collection Submit
   const handleEditionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editionForm.id) {
@@ -225,15 +224,52 @@ export default function AdminDashboard() {
       return;
     }
 
+    setUploading(true);
     try {
-      await saveEdition(editionForm);
-      showToast('✓ Success', 'Drop collection parameters synced to database.');
+      // 1. Process Garbage Collection (delete removed remote images)
+      for (const url of deletedRemoteImages) {
+        await deleteEditionImage(url);
+      }
+      
+      // 2. Process Pending Uploads
+      const finalizedImages = [];
+      const slugId = editionForm.id;
+      
+      for (let i = 0; i < editionForm.images.length; i++) {
+        const img = editionForm.images[i];
+        if (img.file) {
+          const publicUrl = await uploadEditionImage(img.file, slugId);
+          if (!publicUrl) throw new Error('Failed to upload image asset');
+          finalizedImages.push({ url: publicUrl, tag: img.tag });
+          
+          // Free browser memory
+          URL.revokeObjectURL(img.url);
+        } else {
+          finalizedImages.push({ url: img.url, tag: img.tag });
+        }
+      }
+
+      // 3. Database Sync
+      const payload = { ...editionForm, images: finalizedImages };
+      await saveEdition(payload);
+      
+      showToast('✓ Success', 'Drop collection synchronized perfectly.');
       fetchData();
-      resetEditionForm();
+      
+      // Clear tracking states
+      setDeletedRemoteImages([]);
+      setSelectedEdition(null);
       setIsFormActive(false);
+      setEditionForm({
+        id: '', name: '', images: [{ url: '/satin.png', tag: 'Front View' }], description: '', price_sol: 0.8,
+        has_variable_prices: false, prices_by_size: { Small: 0.8, Medium: 0.8, Large: 0.8, 'Extra Large': 0.8 },
+        max_supply: 40, fabric: 'Duchess satin', headpiece: 'Velvet', embroidery: 'Metallic thread', is_active: true
+      });
     } catch (err) {
       console.error(err);
-      showToast('✗ Error', 'Failed to save drop collection details.');
+      showToast('✗ Error', 'Failed to synchronize drop collection.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -257,6 +293,12 @@ export default function AdminDashboard() {
   };
 
   const resetEditionForm = () => {
+    // Revoke any pending object URLs to prevent memory leaks
+    editionForm.images.forEach(img => {
+      if (img.file) URL.revokeObjectURL(img.url);
+    });
+
+    setDeletedRemoteImages([]);
     setSelectedEdition(null);
     setIsFormActive(false);
     setEditionForm({
@@ -275,7 +317,7 @@ export default function AdminDashboard() {
     });
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -300,63 +342,34 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Use current edition Form ID or timestamp slug
-    const id = editionForm.id || 'temp-' + Date.now();
-
-    setUploading(true);
-    try {
-      const publicUrl = await uploadEditionImage(file, id);
-      if (publicUrl) {
-        setEditionForm(prev => ({ 
-          ...prev, 
-          images: [...prev.images, { url: publicUrl, tag: 'View' }] 
-        }));
-        showToast('✓ Success', 'Image asset uploaded successfully.');
-      } else {
-        showToast('✗ Error', 'Failed to upload image asset.');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('✗ Error', 'Error processing apparel image.');
-    } finally {
-      setUploading(false);
-      e.target.value = ''; // Reset file input
-    }
+    // Deferred Upload: Create local blob URL for immediate preview
+    const localUrl = URL.createObjectURL(file);
+    
+    setEditionForm(prev => ({ 
+      ...prev, 
+      images: [...prev.images, { url: localUrl, tag: 'View', file }] 
+    }));
+    
+    e.target.value = ''; // Reset file input
   };
 
-  const handleImageDelete = async (index: number) => {
+  const handleImageDelete = (index: number) => {
     const imageToDelete = editionForm.images[index];
     if (!imageToDelete) return;
 
-    setUploading(true);
-    try {
-      // Don't actually delete from storage if it's the default mock image
-      if (imageToDelete.url === '/satin.png') {
-        setEditionForm(prev => ({ 
-          ...prev, 
-          images: prev.images.filter((_, i) => i !== index) 
-        }));
-        showToast('✓ Asset Removed', 'Collection image has been cleared.');
-        setUploading(false);
-        return;
-      }
-
-      const success = await deleteEditionImage(imageToDelete.url);
-      if (success) {
-        setEditionForm(prev => ({ 
-          ...prev, 
-          images: prev.images.filter((_, i) => i !== index) 
-        }));
-        showToast('✓ Asset Removed', 'Collection image has been cleared.');
-      } else {
-        showToast('✗ Error', 'Failed to delete asset from cloud storage.');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('✗ Error', 'Error during asset deletion.');
-    } finally {
-      setUploading(false);
+    // If it's a pending local file, just revoke the URL to free memory
+    if (imageToDelete.file) {
+      URL.revokeObjectURL(imageToDelete.url);
+    } else if (imageToDelete.url !== '/satin.png' && !imageToDelete.url.startsWith('blob:')) {
+      // If it's a remote file, queue it for deletion on submit
+      setDeletedRemoteImages(prev => [...prev, imageToDelete.url]);
     }
+
+    // Remove from state immediately
+    setEditionForm(prev => ({ 
+      ...prev, 
+      images: prev.images.filter((_, i) => i !== index) 
+    }));
   };
 
   const handlePrint = () => {
