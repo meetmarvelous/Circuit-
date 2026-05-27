@@ -116,13 +116,14 @@ function DropPageContent() {
 
         // Fetch Live SOL Price
         try {
-          const res = await fetch('https://api.jup.ag/price/v2?ids=SOL');
+          const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
           const data = await res.json();
-          if (data?.data?.SOL?.price) {
-            setSolPrice(Number(data.data.SOL.price));
+          if (data?.solana?.usd) {
+            setSolPrice(Number(data.solana.usd));
           }
         } catch (e) {
-          console.error('Failed to fetch SOL price', e);
+          // Log as a warning instead of error to prevent Next.js dev overlay from popping up during offline/local development
+          console.warn('Unable to fetch live SOL price, using cached/offline fallback:', e);
         }
       } catch (err) {
         console.error('Error fetching dynamic drop details:', err);
@@ -296,7 +297,7 @@ function DropPageContent() {
             </div>
             <div className="p-4 md:p-5 border-r border-b sm:border-b-0 border-white/[0.08]">
               <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Unit Price</span>
-              <span className="text-sm font-semibold">{computedPrice} SOL</span>
+              <span className="text-sm font-semibold">${computedPrice} USD</span>
             </div>
             <div className="p-4 md:p-5 border-r border-white/[0.08]">
               <span className="block text-[0.6rem] font-bold uppercase tracking-[0.12em] text-[#666] mb-1.5">Main Fabric</span>

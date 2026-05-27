@@ -106,7 +106,7 @@ function ShipmentModal({ order, edition, onClose }: ShipmentModalProps) {
             </div>
             <div className="flex justify-between items-center text-[#666]">
               <span>Secured Funds</span>
-              <strong className="text-white">\{order.amount_usd} USD</strong>
+              <strong className="text-white">${order.amount_usd} USD</strong>
             </div>
           </div>
 
@@ -313,7 +313,7 @@ export default function HistoryPage() {
                       <div className="pt-4 border-t border-white/5 flex justify-between items-center">
                         <div>
                           <span className="block text-[0.6rem] text-[#444] uppercase font-mono mb-0.5">Escrow Total</span>
-                          <strong className="text-sm font-semibold">\{order.amount_usd} USD</strong>
+                          <strong className="text-sm font-semibold">${order.amount_usd} USD</strong>
                         </div>
                         <span className="text-xs text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all duration-300">
                           View details ➔
