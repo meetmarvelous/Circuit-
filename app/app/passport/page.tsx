@@ -126,7 +126,7 @@ function PassportContent() {
     headpiece: 'Velvet',
     embroidery: 'Metallic thread',
     max_supply: 40,
-    image_url: '/satin.png'
+    images: [{ url: '/satin.png', tag: 'Front' }]
   };
 
   return (
@@ -149,7 +149,7 @@ function PassportContent() {
             <div className="lg:col-span-5 sticky top-32" style={{ animation: 'fadeIn 0.6s ease-out' }}>
               <div className="relative aspect-[4/5] md:aspect-square w-full rounded-[2.5rem] overflow-hidden border border-white/10 group shadow-2xl">
                 <Image 
-                  src={activeEdition.image_url || "/satin.png"} 
+                  src={activeEdition.images?.[0]?.url || "/satin.png"} 
                   alt={activeEdition.name} 
                   fill 
                   className="object-cover group-hover:scale-105 transition-transform duration-1000"

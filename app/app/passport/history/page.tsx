@@ -241,7 +241,7 @@ export default function HistoryPage() {
                 const ed = editionsMap[order.drop_id];
                 const activeEdition = ed || {
                   name: '3 Piece Agbada',
-                  image_url: '/satin.png',
+                  images: [{ url: '/satin.png', tag: 'Front' }],
                   fabric: 'Duchess satin'
                 };
                 const status = order.status || 'pending';
@@ -256,7 +256,7 @@ export default function HistoryPage() {
                     {/* Top image wrapper */}
                     <div className="aspect-[16/10] relative overflow-hidden bg-[#0a0a0a]">
                       <Image 
-                        src={activeEdition.image_url || '/satin.png'} 
+                        src={activeEdition.images?.[0]?.url || '/satin.png'} 
                         alt={activeEdition.name}
                         fill
                         className="object-cover opacity-60 group-hover:scale-105 group-hover:opacity-85 transition-all duration-1000"

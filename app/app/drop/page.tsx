@@ -29,7 +29,7 @@ interface TxResult {
 const fallbackEdition = {
   id: 'drop-zero',
   name: '3 Piece Agbada',
-  image_url: '/satin.png',
+  images: [{ url: '/satin.png', tag: 'Front View' }],
   description: 'Fashion sold before it’s made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.',
   price_sol: 0.8,
   has_variable_prices: false,
@@ -55,6 +55,7 @@ function DropPageContent() {
   const [selectedSize, setSelectedSize] = useState('Medium');
   const [quantity, setQuantity] = useState(1);
   const [computedPrice, setComputedPrice] = useState(0.8);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const processingRef = useRef(false);
 
   // Fetch Drop & Supply Details from Supabase
@@ -367,28 +368,59 @@ function DropPageContent() {
           </div>
         </div>
 
-        {/* Right: Premium Visual */}
-        <div className="order-1 lg:order-2 flex justify-center lg:justify-end" style={{ animation: 'fadeIn 0.8s ease-out 0.2s both' }}>
+        {/* Right: Premium Visual Gallery */}
+        <div className="order-1 lg:order-2 flex flex-col justify-start lg:justify-start pt-8 lg:pt-0 items-center lg:items-end w-full" style={{ animation: 'fadeIn 0.8s ease-out 0.2s both' }}>
           <div className="relative w-full max-w-[480px]">
             {/* Ambient Background Radial */}
             <div className="absolute inset-0 md:inset-[-15%] bg-[radial-gradient(circle,rgba(255,255,255,.05)_0%,transparent_70%)] blur-[40px] pointer-events-none" />
 
-            {/* Frame */}
-            <div className="relative rounded-[32px] overflow-hidden border border-white/[0.12] bg-[#0D0D0D] shadow-[0_30px_100px_rgba(0,0,0,.6)]">
+            {/* Main Frame */}
+            <div className="relative rounded-[32px] overflow-hidden border border-white/[0.12] bg-[#0D0D0D] shadow-[0_30px_100px_rgba(0,0,0,.6)] aspect-[4/5]">
               <Image
-                src={activeEdition.image_url || '/satin.png'}
-                alt={activeEdition.name}
-                width={600}
-                height={720}
-                className="w-full h-auto object-cover scale-[1.01]"
+                src={activeEdition.images?.[activeImageIndex]?.url || '/satin.png'}
+                alt={`${activeEdition.name} - ${activeEdition.images?.[activeImageIndex]?.tag || 'View'}`}
+                fill
+                className="w-full h-full object-cover scale-[1.01] transition-all duration-700 ease-in-out"
                 priority
               />
               
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
               <div className="absolute bottom-6 left-6 flex items-center gap-2 bg-black/60 backdrop-blur-[20px] rounded-full px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.1em] border border-white/[0.12]">
                 <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse shadow-[0_0_8px_white]" />
                 {activeEdition.name}
               </div>
+
+              {activeEdition.images?.[activeImageIndex]?.tag && (
+                <div className="absolute top-6 right-6 bg-black/40 backdrop-blur-md rounded-full px-3 py-1.5 text-[0.6rem] font-bold text-white/80 uppercase tracking-widest border border-white/10 animate-fade-in">
+                  {activeEdition.images[activeImageIndex].tag}
+                </div>
+              )}
             </div>
+
+            {/* Thumbnail Gallery Grid */}
+            {activeEdition.images && activeEdition.images.length > 1 && (
+              <div className="flex gap-3 mt-4 w-full overflow-x-auto pb-2 scrollbar-hide justify-center lg:justify-start">
+                {activeEdition.images.map((img: any, idx: number) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`relative w-20 h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 shrink-0 ${
+                      activeImageIndex === idx 
+                        ? 'border-white shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-105' 
+                        : 'border-white/10 opacity-50 hover:opacity-100 hover:border-white/40'
+                    }`}
+                  >
+                    <Image
+                      src={img.url}
+                      alt={img.tag || `View ${idx + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

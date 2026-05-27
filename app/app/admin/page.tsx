@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
-import { supabase, getEditions, saveEdition, updateOrderStatusLifecycle, updateOrderShipmentDetails } from '@/lib/db';
+import { supabase, getEditions, saveEdition, updateOrderStatusLifecycle, updateOrderShipmentDetails, uploadEditionImage, deleteEditionImage } from '@/lib/db';
 import { solscanTxUrl, formatSerialNumber } from '@/lib/utils';
 import AdminNavbar from '@/components/AdminNavbar';
 import { showToast } from '@/components/Toast';
@@ -27,7 +27,7 @@ interface Order {
 interface Edition {
   id: string;
   name: string;
-  image_url: string;
+  images: { url: string; tag: string; file?: File }[];
   description: string;
   price_sol: number;
   has_variable_prices: boolean;
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
   const [editionForm, setEditionForm] = useState<{
     id: string;
     name: string;
-    image_url: string;
+    images: { url: string; tag: string; file?: File }[];
     description: string;
     price_sol: number;
     has_variable_prices: boolean;
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
   }>({
     id: '',
     name: '',
-    image_url: '/satin.png',
+    images: [{ url: '/satin.png', tag: 'Front View' }],
     description: '',
     price_sol: 0.8,
     has_variable_prices: false,
@@ -92,6 +92,11 @@ export default function AdminDashboard() {
     embroidery: 'Metallic thread',
     is_active: true
   });
+
+  const [uploading, setUploading] = useState(false);
+  const [showManualImageInput, setShowManualImageInput] = useState(false);
+  const [isFormActive, setIsFormActive] = useState(false);
+  const [deletedRemoteImages, setDeletedRemoteImages] = useState<string[]>([]);
 
   const fetchData = async () => {
     try {
@@ -225,18 +230,20 @@ export default function AdminDashboard() {
       showToast('✓ Success', 'Drop collection parameters synced to database.');
       fetchData();
       resetEditionForm();
+      setIsFormActive(false);
     } catch (err) {
       console.error(err);
       showToast('✗ Error', 'Failed to save drop collection details.');
     }
   };
 
-  const loadEditionToForm = (ed: Edition) => {
+  const editEdition = (ed: Edition) => {
     setSelectedEdition(ed);
+    setIsFormActive(true);
     setEditionForm({
       id: ed.id,
       name: ed.name,
-      image_url: ed.image_url,
+      images: ed.images || [],
       description: ed.description,
       price_sol: ed.price_sol,
       has_variable_prices: ed.has_variable_prices,
@@ -251,10 +258,11 @@ export default function AdminDashboard() {
 
   const resetEditionForm = () => {
     setSelectedEdition(null);
+    setIsFormActive(false);
     setEditionForm({
       id: '',
       name: '',
-      image_url: '/satin.png',
+      images: [{ url: '/satin.png', tag: 'Front View' }],
       description: '',
       price_sol: 0.8,
       has_variable_prices: false,
@@ -265,6 +273,90 @@ export default function AdminDashboard() {
       embroidery: 'Metallic thread',
       is_active: true
     });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (editionForm.images.length >= 4) {
+      showToast('✗ Limit Reached', 'Maximum 4 images allowed per collection.');
+      e.target.value = '';
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showToast('✗ Invalid File', 'Please select a valid image (PNG, JPG, WEBP).');
+      e.target.value = '';
+      return;
+    }
+
+    // Validate file size (5MB Limit)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      showToast('✗ File Too Large', 'Image size must be less than 5MB.');
+      e.target.value = '';
+      return;
+    }
+
+    // Use current edition Form ID or timestamp slug
+    const id = editionForm.id || 'temp-' + Date.now();
+
+    setUploading(true);
+    try {
+      const publicUrl = await uploadEditionImage(file, id);
+      if (publicUrl) {
+        setEditionForm(prev => ({ 
+          ...prev, 
+          images: [...prev.images, { url: publicUrl, tag: 'View' }] 
+        }));
+        showToast('✓ Success', 'Image asset uploaded successfully.');
+      } else {
+        showToast('✗ Error', 'Failed to upload image asset.');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('✗ Error', 'Error processing apparel image.');
+    } finally {
+      setUploading(false);
+      e.target.value = ''; // Reset file input
+    }
+  };
+
+  const handleImageDelete = async (index: number) => {
+    const imageToDelete = editionForm.images[index];
+    if (!imageToDelete) return;
+
+    setUploading(true);
+    try {
+      // Don't actually delete from storage if it's the default mock image
+      if (imageToDelete.url === '/satin.png') {
+        setEditionForm(prev => ({ 
+          ...prev, 
+          images: prev.images.filter((_, i) => i !== index) 
+        }));
+        showToast('✓ Asset Removed', 'Collection image has been cleared.');
+        setUploading(false);
+        return;
+      }
+
+      const success = await deleteEditionImage(imageToDelete.url);
+      if (success) {
+        setEditionForm(prev => ({ 
+          ...prev, 
+          images: prev.images.filter((_, i) => i !== index) 
+        }));
+        showToast('✓ Asset Removed', 'Collection image has been cleared.');
+      } else {
+        showToast('✗ Error', 'Failed to delete asset from cloud storage.');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('✗ Error', 'Error during asset deletion.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handlePrint = () => {
@@ -365,7 +457,7 @@ export default function AdminDashboard() {
 
                           <div className="flex gap-4">
                             <div className="w-12 h-16 rounded-lg border border-white/10 relative overflow-hidden shrink-0">
-                              <Image src={ed.image_url || '/satin.png'} alt={ed.name} fill className="object-cover" />
+                              <Image src={ed.images?.[0]?.url || '/satin.png'} alt={ed.name} fill className="object-cover" />
                             </div>
                             <div className="min-w-0">
                               <h3 className="text-lg font-bold text-white group-hover:text-white transition-colors truncate">
@@ -404,7 +496,7 @@ export default function AdminDashboard() {
                           return (
                             <>
                               <div className="w-16 h-20 rounded-xl border border-white/10 relative overflow-hidden shrink-0">
-                                <Image src={ed?.image_url || '/satin.png'} alt={ed?.name || ''} fill className="object-cover" />
+                                <Image src={ed?.images?.[0]?.url || '/satin.png'} alt={ed?.name || ''} fill className="object-cover" />
                               </div>
                               <div>
                                 <div className="flex items-center gap-3 mb-1">
@@ -641,7 +733,19 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
               {/* Left Column: Form Editor */}
-              <div className="lg:col-span-5 card-glass p-8 border-white/10">
+              <div className="lg:col-span-5 card-glass p-8 border-white/10 order-2 lg:order-1">
+                {!isFormActive ? (
+                  <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center opacity-40 border border-dashed border-white/10 rounded-2xl p-8">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mb-4 text-white/50">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <h3 className="text-sm font-bold uppercase tracking-wider mb-2">Editor Locked</h3>
+                    <p className="text-[0.65rem] text-[#888] font-mono leading-relaxed max-w-[200px]">
+                      Select an existing collection from the directory to edit, or initialize a new drop specification to unlock the editor.
+                    </p>
+                  </div>
+                ) : (
                 <form onSubmit={handleEditionSubmit} className="space-y-6">
                   <div>
                     <div className="flex justify-between items-baseline mb-2">
@@ -693,13 +797,114 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Image URL / Path</label>
-                    <input
-                      type="text"
-                      value={editionForm.image_url}
-                      onChange={(e) => setEditionForm(prev => ({ ...prev, image_url: e.target.value }))}
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 font-mono"
-                    />
+                    <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Apparel Images (Max 4)</label>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      {editionForm.images.map((img, idx) => (
+                        <div key={idx} className="relative w-full h-40 bg-[#0D0D0D] border border-white/10 rounded-xl overflow-hidden group flex flex-col">
+                          <div className="relative flex-1">
+                            <Image
+                              src={img.url}
+                              alt={`Apparel Preview ${idx + 1}`}
+                              fill
+                              className="object-cover opacity-80"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                            
+                            {/* Overlay delete button */}
+                            <button
+                              type="button"
+                              onClick={() => handleImageDelete(idx)}
+                              className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white rounded-lg p-1.5 transition-all hover:scale-105 shadow-xl flex items-center justify-center gap-1.5 text-[0.55rem] font-bold uppercase tracking-wider font-mono z-10"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6m4-6v6"/>
+                              </svg>
+                            </button>
+                            
+                            {/* Custom Tag Input overlaying the bottom of the image */}
+                            <div className="absolute bottom-2 left-2 right-2 z-10">
+                              <input
+                                type="text"
+                                value={img.tag}
+                                onChange={(e) => {
+                                  const newImages = [...editionForm.images];
+                                  newImages[idx].tag = e.target.value;
+                                  setEditionForm(prev => ({ ...prev, images: newImages }));
+                                }}
+                                placeholder="e.g. Front View"
+                                className="w-full bg-black/60 backdrop-blur-md border border-white/20 rounded-lg px-2 py-1.5 text-[0.65rem] text-white focus:outline-none focus:border-white/50 font-mono transition-all"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {editionForm.images.length < 4 && (
+                        <div className="relative w-full h-40 border-2 border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.01] bg-[#0D0D0D] rounded-xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group">
+                          {uploading ? (
+                            <div className="flex flex-col items-center justify-center gap-3">
+                              <div className="w-6 h-6 border-2 border-white/10 border-t-white rounded-full animate-spin" />
+                              <span className="text-[0.6rem] font-mono text-[#555]">Processing...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                              />
+                              <div className="w-8 h-8 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-center group-hover:scale-105 duration-300">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/40 group-hover:text-white/70 transition-colors">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                                </svg>
+                              </div>
+                              <span className="text-[0.65rem] font-bold text-white/70 group-hover:text-white transition-colors">Add Image</span>
+                              <span className="text-[0.55rem] text-[#444] uppercase tracking-wider font-mono">Max 5MB</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Toggle link for manual typing fallback */}
+                    <div className="flex justify-end mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowManualImageInput(!showManualImageInput)}
+                        className="text-[0.6rem] text-[#555] hover:text-[#888] font-mono transition-colors"
+                      >
+                        {showManualImageInput ? '← Hide Manual URL Input' : 'Toggle Manual URL Input ➔'}
+                      </button>
+                    </div>
+
+                    {showManualImageInput && editionForm.images.length < 4 && (
+                      <div className="mt-2 animate-fade-in flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="e.g. /satin.png or absolute URL"
+                          id="manual-url-input"
+                          className="flex-1 bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const input = document.getElementById('manual-url-input') as HTMLInputElement;
+                            if (input && input.value) {
+                              setEditionForm(prev => ({ 
+                                ...prev, 
+                                images: [...prev.images, { url: input.value, tag: 'View' }] 
+                              }));
+                              input.value = '';
+                            }
+                          }}
+                          className="bg-white text-black px-4 rounded-xl text-xs font-bold uppercase"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -823,10 +1028,11 @@ export default function AdminDashboard() {
                     <span>{selectedEdition ? 'Sync Drop Collection' : 'Architect Drop Collection'}</span>
                   </button>
                 </form>
+                )}
               </div>
 
               {/* Right Column: Grid List of collections */}
-              <div className="lg:col-span-7 space-y-6">
+              <div className="lg:col-span-7 space-y-6 order-1 lg:order-2">
                 <span className="text-[0.65rem] font-bold uppercase tracking-widest text-[#666] block font-mono">
                   Collections Directory ({editions.length})
                 </span>
@@ -834,7 +1040,10 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Dashed "+ Architect New Drop" Card */}
                   <div 
-                    onClick={resetEditionForm}
+                    onClick={() => {
+                      resetEditionForm();
+                      setIsFormActive(true);
+                    }}
                     className={`card-glass p-5 flex flex-col justify-center items-center gap-3 overflow-hidden border border-dashed cursor-pointer hover:bg-white/[0.02] transition-all duration-300 min-h-[160px] group ${
                       !selectedEdition 
                         ? 'border-white bg-white/[0.04]' 
@@ -853,14 +1062,14 @@ export default function AdminDashboard() {
                   {editions.map((ed) => (
                     <div 
                       key={ed.id} 
-                      onClick={() => loadEditionToForm(ed)}
+                      onClick={() => editEdition(ed)}
                       className={`card-glass p-5 flex flex-col justify-between gap-6 overflow-hidden border cursor-pointer hover:border-white/30 hover:bg-white/[0.02] transition-all duration-300 ${
                         selectedEdition?.id === ed.id ? 'border-white bg-white/[0.04]' : 'border-white/[0.06]'
                       }`}
                     >
                       <div className="flex gap-4">
                         <div className="w-16 h-20 rounded-xl border border-white/10 relative overflow-hidden shrink-0">
-                          <Image src={ed.image_url || '/satin.png'} alt={ed.name} fill className="object-cover" />
+                          <Image src={ed.images?.[0]?.url || '/satin.png'} alt={ed.name} fill className="object-cover" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">

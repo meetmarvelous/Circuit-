@@ -229,7 +229,7 @@ export async function getEditions(activeOnly = true) {
   return [{
     id: 'drop-zero',
     name: '3 Piece Agbada',
-    image_url: '/satin.png',
+    images: [{ url: '/satin.png', tag: 'Front View' }],
     description: 'Fashion sold before it’s made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.',
     price_sol: 0.8,
     has_variable_prices: false,
@@ -258,7 +258,7 @@ export async function getEditionById(id: string) {
     return {
       id: 'drop-zero',
       name: '3 Piece Agbada',
-      image_url: '/satin.png',
+      images: [{ url: '/satin.png', tag: 'Front View' }],
       description: 'Fashion sold before it’s made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.',
       price_sol: 0.8,
       has_variable_prices: false,
@@ -275,12 +275,18 @@ export async function getEditionById(id: string) {
 
 export async function saveEdition(editionData: any) {
   if (supabase) {
+    // Ensure image_url is still provided to avoid NOT NULL constraint errors
+    const payload = {
+      ...editionData,
+      image_url: editionData.images?.[0]?.url || '/satin.png'
+    };
+    
     const { data, error } = await supabase
       .from('editions')
-      .upsert(editionData, { onConflict: 'id' })
+      .upsert(payload, { onConflict: 'id' })
       .select();
     
-    if (error) console.error('Supabase Save Edition Error:', error);
+    if (error) console.error('Supabase Save Edition Error:', JSON.stringify(error, null, 2), error.message, error.details);
     return data;
   }
   return null;
@@ -361,4 +367,73 @@ export async function updateOrderShipmentDetails(orderId: string, details: strin
     localStorage.setItem('circuit_orders', JSON.stringify(updatedOrders));
   }
 }
+
+export async function uploadEditionImage(file: File, id: string): Promise<string | null> {
+  if (!supabase) {
+    // Local Simulation: Convert file to Base64 data URL for local storage persistence
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  try {
+    const fileExt = file.name.split('.').pop() || 'png';
+    const fileName = `${id}-${Date.now()}.${fileExt}`;
+    const filePath = `collections/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('collection-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage
+      .from('collection-images')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  } catch (err) {
+    console.error('Error uploading image to Supabase:', err);
+    return null;
+  }
+}
+
+export async function deleteEditionImage(imageUrl: string): Promise<boolean> {
+  if (!supabase) {
+    return true; // Simulate success
+  }
+
+  // Check if it's a Supabase URL
+  if (!imageUrl.includes('supabase.co') && !imageUrl.includes('supabase.in')) {
+    return true; // Ignore placeholder or base64
+  }
+
+  try {
+    // Extract file path from public URL
+    // Public URL format: https://[project-id].supabase.co/storage/v1/object/public/collection-images/collections/[filename]
+    const parts = imageUrl.split('/collection-images/');
+    if (parts.length < 2) return false;
+    const filePath = decodeURIComponent(parts[1]);
+
+    const { error } = await supabase.storage
+      .from('collection-images')
+      .remove([filePath]);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error deleting image from Supabase:', err);
+    return false;
+  }
+}
+
 

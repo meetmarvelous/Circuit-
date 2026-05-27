@@ -123,7 +123,7 @@ export default function ConfirmPage() {
 
   const ed = activeEdition || {
     name: '3 Piece Agbada',
-    image_url: '/satin.png',
+    images: [{ url: '/satin.png', tag: 'Front' }],
   };
 
   return (
@@ -177,7 +177,7 @@ export default function ConfirmPage() {
             {/* Item Preview */}
             <div className="w-full flex items-center gap-4 bg-white/[0.03] border border-white/[0.08] p-4 rounded-2xl">
               <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-white/10 relative">
-                <Image src={ed.image_url || '/satin.png'} alt={ed.name} fill className="object-cover" />
+                <Image src={ed.images?.[0]?.url || '/satin.png'} alt={ed.name} fill className="object-cover" />
               </div>
               <div className="flex flex-col text-left">
                 <span className="text-[0.6rem] font-bold text-[#666] uppercase tracking-wider">Active Order</span>

@@ -123,7 +123,7 @@ export default function LandingPage() {
                       >
                         <div className="aspect-[4/5] relative overflow-hidden">
                           <Image
-                            src={edition.image_url || '/satin.png'}
+                            src={edition.images?.[0]?.url || '/satin.png'}
                             alt={edition.name}
                             fill
                             className="object-cover transition-transform duration-700 hover:scale-105"
@@ -243,7 +243,7 @@ export default function LandingPage() {
             
             <div className="order-1 lg:order-2">
               <div className="card-glass overflow-hidden relative aspect-[4/5] lg:aspect-square group border-white/[0.08]">
-                <Image src={selectedEdition?.image_url || "/satin.png"} alt="Process shot" fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" />
+                <Image src={selectedEdition?.images?.[0]?.url || "/satin.png"} alt="Process shot" fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-8 left-8">
                    <div className="w-12 h-0.5 bg-white mb-4" />
