@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { getEditions } from '@/lib/db';
 
@@ -55,7 +56,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-white selection:bg-white selection:text-black">
-      <Navbar />
+      <Navbar customEditions={editions} />
       
       <main className="flex-1">
         {/* HERO SECTION */}
@@ -106,118 +107,43 @@ export default function LandingPage() {
                 <span className="text-xs font-mono text-[#555]">Querying Supabase Node...</span>
               </div>
             ) : (
-              <div className="flex flex-col gap-12">
-                {/* Horizontal slider */}
-                <div className="flex gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory px-4 md:px-0 -mx-4 md:-mx-0 scroll-smooth">
-                  {editions.map((edition) => {
-                    const isSelected = selectedEdition?.id === edition.id;
-                    return (
-                      <button
-                        key={edition.id}
-                        onClick={() => setSelectedEdition(edition)}
-                        className={`flex-none w-[280px] md:w-[360px] snap-center text-left rounded-[24px] overflow-hidden transition-all duration-500 cursor-pointer border ${
-                          isSelected
-                            ? 'border-white bg-white/[0.04] scale-[1.02] shadow-[0_0_50px_rgba(255,255,255,0.08)]'
-                            : 'border-white/10 bg-white/[0.01] hover:border-white/30 scale-100'
-                        }`}
-                      >
-                        <div className="aspect-[4/5] relative overflow-hidden">
-                          <Image
-                            src={edition.images?.[0]?.url || '/satin.png'}
-                            alt={edition.name}
-                            fill
-                            className="object-cover transition-transform duration-700 hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                          <div className="absolute bottom-6 left-6 right-6">
-                            <span className="text-[0.6rem] font-bold tracking-widest text-white/40 uppercase block mb-1">
-                              Limited to {edition.max_supply} pieces.
+              <div className="flex flex-col">
+                {/* Edition Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                  {editions.map((edition) => (
+                    <Link
+                      key={edition.id}
+                      href={`/drop?edition=${edition.id}`}
+                      className="group block relative rounded-2xl overflow-hidden transition-all duration-500 cursor-pointer border border-white/10 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04] hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(255,255,255,0.05)]"
+                    >
+                      <div className="aspect-[4/5] relative overflow-hidden">
+                        <Image
+                          src={edition.images?.[0]?.url || '/satin.png'}
+                          alt={edition.name}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-500" />
+                        
+                        <div className="absolute bottom-6 left-6 right-6">
+                          <span className="text-[0.6rem] font-bold tracking-[0.15em] text-white/50 uppercase block mb-2">
+                            Limited to {edition.max_supply} pieces
+                          </span>
+                          <h3 className="text-xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors">{edition.name}</h3>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-white/90">
+                              {edition.has_variable_prices ? 'Variable Pricing' : `${edition.price_sol} SOL`}
                             </span>
-                            <h3 className="text-xl md:text-2xl font-bold text-white mb-2">{edition.name}</h3>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-white/90">
-                                {edition.has_variable_prices ? 'Variable Pricing' : `${edition.price_sol} SOL`}
-                              </span>
-                              {isSelected && (
-                                <span className="text-[0.6rem] bg-white text-black px-2 py-0.5 rounded-full uppercase font-mono font-bold tracking-wider animate-pulse">
-                                  Selected
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Vertically expanding overview drawer */}
-                <div
-                  className={`transition-all duration-500 ease-in-out overflow-hidden border-t border-white/10 ${
-                    selectedEdition ? 'max-h-[800px] opacity-100 py-12' : 'max-h-0 opacity-0 py-0'
-                  }`}
-                >
-                  {selectedEdition && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                      <div className="space-y-6">
-                        <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40 block">
-                          Details
-                        </span>
-                        <h3 className="text-3xl md:text-4xl font-bold">{selectedEdition.name}</h3>
-                        <p className="text-[#888] leading-relaxed text-sm md:text-base">
-                          {selectedEdition.description}
-                        </p>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-4 border-t border-white/5">
-                          <div>
-                            <span className="text-[0.6rem] text-[#666] uppercase block font-mono">Main Fabric</span>
-                            <span className="text-sm font-semibold">{selectedEdition.fabric || 'Duchess satin'}</span>
-                          </div>
-                          <div>
-                            <span className="text-[0.6rem] text-[#666] uppercase block font-mono">Headpiece</span>
-                            <span className="text-sm font-semibold">{selectedEdition.headpiece || 'Velvet'}</span>
-                          </div>
-                          <div>
-                            <span className="text-[0.6rem] text-[#666] uppercase block font-mono">Embroidery</span>
-                            <span className="text-sm font-semibold">{selectedEdition.embroidery || 'Metallic thread'}</span>
-                          </div>
-                          <div>
-                            <span className="text-[0.6rem] text-[#666] uppercase block font-mono">Max Supply</span>
-                            <span className="text-sm font-semibold">{selectedEdition.max_supply} Pieces Only</span>
-                          </div>
-                          <div>
-                            <span className="text-[0.6rem] text-[#666] uppercase block font-mono">Escrow Program</span>
-                            <span className="text-sm font-semibold text-emerald-400 font-mono text-xs">Secured</span>
-                          </div>
-                          <div>
-                            <span className="text-[0.6rem] text-[#666] uppercase block font-mono">Base Price</span>
-                            <span className="text-sm font-semibold">{selectedEdition.price_sol} SOL</span>
+                            <span className="text-[0.65rem] font-bold uppercase tracking-wider text-white/70 group-hover:text-white transition-colors flex items-center gap-1 border border-white/10 px-2 py-1 rounded-full bg-white/[0.05]">
+                              Architect Drop
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </span>
                           </div>
                         </div>
                       </div>
-
-                      <div className="flex flex-col items-center lg:items-end justify-center">
-                        <div className="card-glass p-8 w-full max-w-sm border-white/5 text-center lg:text-left">
-                          <h4 className="text-xs uppercase font-mono tracking-widest text-[#666] mb-2">Checkout Pricing</h4>
-                          <div className="text-3xl font-bold mb-4">
-                            {selectedEdition.has_variable_prices ? (
-                              <span className="text-sm font-mono text-white/75 block">Size Pricing Overrides Active</span>
-                            ) : (
-                              <span>{selectedEdition.price_sol} SOL</span>
-                            )}
-                          </div>
-                          <p className="text-xs text-[#888] mb-6 leading-relaxed">
-                            Your payment stays secure until your order is delivered.
-                          </p>
-                          <a
-                            href={`/drop?edition=${selectedEdition.id}`}
-                            className="btn-circuit w-full justify-center text-center py-4 text-xs"
-                          >
-                            <span>Proceed to Drop ➔</span>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                    </Link>
+                  ))}
                 </div>
               </div>
             )}

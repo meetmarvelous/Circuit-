@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { href: '/passport', label: 'Passport', page: 'passport' },
 ];
 
-export default function Navbar() {
+export default function Navbar({ customEditions }: { customEditions?: any[] }) {
   const pathname = usePathname();
   const { user, isSignedIn, signOut, getPrivateKey } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -60,7 +60,7 @@ export default function Navbar() {
 
 
   const activePage = pathname.startsWith('/passport') ? 'passport' :
-    pathname.startsWith('/landing') ? 'landing' :
+    pathname.startsWith('/landing') || pathname === '/' ? 'landing' :
     pathname.startsWith('/confirm') ? 'confirm' : 'drop';
 
   const handleExportKey = () => {
@@ -86,24 +86,41 @@ export default function Navbar() {
         <div className="max-w-[1400px] mx-auto h-full flex items-center justify-between px-6 md:px-10">
           
           {/* Brand - Left */}
-          <Link href="/landing" className="flex items-center gap-2.5 shrink-0 z-[1001]">
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 z-[1001]">
             <Image src="/logo/logo_icon_white.svg" alt="Circuit" width={28} height={28} className="brightness-110" />
             <span className="font-brand text-[1.2rem] font-bold tracking-[0.05em] bg-gradient-to-b from-white to-[#A3A3A3] bg-clip-text text-transparent">Circuit</span>
           </Link>
 
           {/* Desktop Nav - Center */}
           <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-1 p-1 bg-white/[0.03] border border-white/[0.08] rounded-full">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.page}
-                href={link.href}
-                className={`px-6 py-2 rounded-full text-[0.8rem] font-semibold uppercase tracking-[0.06em] transition-all ${
-                  activePage === link.page ? 'text-white bg-white/[0.1] shadow-[0_0_15px_rgba(255,255,255,0.05)]' : 'text-[#666] hover:text-white'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {activePage === 'landing' && customEditions && customEditions.length > 0 ? (
+              <div className="relative group">
+                <button className="px-6 py-2 rounded-full text-[0.8rem] font-semibold uppercase tracking-[0.06em] transition-all text-white bg-white/[0.1] shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+                  Active Editions ▾
+                </button>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-56 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50">
+                  <div className="card-glass p-2 border border-white/[0.1] rounded-2xl shadow-2xl flex flex-col gap-1">
+                    {customEditions.map(ed => (
+                      <Link key={ed.id} href={`/drop?edition=${ed.id}`} className="block px-4 py-2.5 text-[0.75rem] font-bold text-white/70 hover:text-white hover:bg-white/[0.05] rounded-xl transition-colors truncate">
+                        {ed.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              NAV_LINKS.map((link) => (
+                <Link
+                  key={link.page}
+                  href={link.href}
+                  className={`px-6 py-2 rounded-full text-[0.8rem] font-semibold uppercase tracking-[0.06em] transition-all ${
+                    activePage === link.page ? 'text-white bg-white/[0.1] shadow-[0_0_15px_rgba(255,255,255,0.05)]' : 'text-[#666] hover:text-white'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))
+            )}
           </div>
 
           {/* Actions - Right */}
@@ -199,22 +216,44 @@ export default function Navbar() {
       >
         <div className="h-full flex flex-col px-8 pt-32 pb-12">
           <div className="flex flex-col gap-8">
-            {NAV_LINKS.map((link, i) => (
-              <Link
-                key={link.page}
-                href={link.href}
-                className="group flex items-baseline gap-4"
-              >
-                <span className="text-[0.7rem] font-mono text-[#444] group-hover:text-white transition-colors">
-                  0{i + 1}
-                </span>
-                <span className={`text-[2.5rem] font-bold tracking-[-0.03em] ${
-                  activePage === link.page ? 'text-white' : 'text-[#666] hover:text-white'
-                }`}>
-                  {link.label}
-                </span>
-              </Link>
-            ))}
+            {activePage === 'landing' && customEditions && customEditions.length > 0 ? (
+              <>
+                <span className="text-[0.6rem] font-bold text-[#666] uppercase tracking-[0.1em] mb-2">Active Editions</span>
+                {customEditions.map((ed, i) => (
+                  <Link
+                    key={ed.id}
+                    href={`/drop?edition=${ed.id}`}
+                    onClick={() => setDrawerOpen(false)}
+                    className="group flex items-baseline gap-4"
+                  >
+                    <span className="text-[0.7rem] font-mono text-[#444] group-hover:text-white transition-colors">
+                      0{i + 1}
+                    </span>
+                    <span className="text-[2rem] font-bold tracking-[-0.03em] text-white hover:text-white/80 line-clamp-1">
+                      {ed.name}
+                    </span>
+                  </Link>
+                ))}
+              </>
+            ) : (
+              NAV_LINKS.map((link, i) => (
+                <Link
+                  key={link.page}
+                  href={link.href}
+                  onClick={() => setDrawerOpen(false)}
+                  className="group flex items-baseline gap-4"
+                >
+                  <span className="text-[0.7rem] font-mono text-[#444] group-hover:text-white transition-colors">
+                    0{i + 1}
+                  </span>
+                  <span className={`text-[2.5rem] font-bold tracking-[-0.03em] ${
+                    activePage === link.page ? 'text-white' : 'text-[#666] hover:text-white'
+                  }`}>
+                    {link.label}
+                  </span>
+                </Link>
+              ))
+            )}
           </div>
 
           <div className="mt-auto pt-12 border-t border-white/[0.08] flex flex-col gap-8">

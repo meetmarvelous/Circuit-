@@ -14,7 +14,7 @@ import { solscanTxUrl } from '@/lib/utils';
 import { showToast } from '@/components/Toast';
 import SignInModal from '@/components/SignInModal';
 import Selector from '@/components/Selector';
-import { saveOrder, supabase, getEditionById } from '@/lib/db';
+import { saveOrder, supabase, getEditionById, getEditions } from '@/lib/db';
 
 type TxState = 'idle' | 'signing' | 'success' | 'error' | 'soldout';
 
@@ -44,7 +44,7 @@ const fallbackEdition = {
 function DropPageContent() {
   const { user, isSignedIn } = useAuth();
   const searchParams = useSearchParams();
-  const editionId = searchParams.get('edition') || 'drop-zero';
+  const requestedEditionId = searchParams.get('edition');
 
   const [edition, setEdition] = useState<any>(null);
   const [mintedCount, setMintedCount] = useState(0);
@@ -74,9 +74,21 @@ function DropPageContent() {
     async function loadDropData() {
       try {
         setLoading(true);
-        // Query edition details
-        const ed = await getEditionById(editionId);
-        const activeEdition = ed || fallbackEdition;
+        let activeEdition = null;
+
+        if (requestedEditionId) {
+          activeEdition = await getEditionById(requestedEditionId);
+        }
+
+        if (!activeEdition) {
+          const allEditions = await getEditions();
+          if (allEditions && allEditions.length > 0) {
+            activeEdition = allEditions[0];
+          } else {
+            activeEdition = fallbackEdition;
+          }
+        }
+
         setEdition(activeEdition);
 
         // Calculate dynamic price based on size
@@ -92,7 +104,7 @@ function DropPageContent() {
           const { count, error } = await supabase
             .from('orders')
             .select('*', { count: 'exact', head: true })
-            .eq('drop_id', editionId);
+            .eq('drop_id', activeEdition.id);
           
           if (!error && count !== null) {
             setMintedCount(count);
@@ -109,7 +121,7 @@ function DropPageContent() {
     loadDropData();
     const interval = setInterval(loadDropData, 20000);
     return () => clearInterval(interval);
-  }, [editionId]);
+  }, [requestedEditionId, selectedSize]);
 
   // Recalculate price when size updates
   useEffect(() => {
@@ -150,12 +162,12 @@ function DropPageContent() {
       const totalAmountSol = unitPrice * quantity;
 
       // 1. Solana Handshake (via backend custodial escrow transaction)
-      const result = await initializeEscrow(user.email, activeEdition.id, totalAmountSol);
+      const result = await initializeEscrow(user.email, edition.id, totalAmountSol);
 
       // 2. Persist dynamic order state to database
       await saveOrder({
         email: user.email,
-        drop_id: activeEdition.id,
+        drop_id: edition.id,
         tx_signature: result.txSignature,
         escrow_pda: result.escrowPDA,
         amount_sol: totalAmountSol,
@@ -231,6 +243,13 @@ function DropPageContent() {
             <span className="px-3 py-1 rounded-full text-[0.65rem] font-bold uppercase tracking-[0.08em] bg-white/[0.04] border border-white/[0.08] text-[#666]">
               On-Chain Gated Escrow
             </span>
+          </div>
+
+          <div className="w-full flex justify-between items-center z-10 pt-4">
+            <Link href="/" className="inline-flex items-center gap-2 text-[#888] hover:text-white transition-colors text-xs font-bold uppercase tracking-widest px-4 py-2 border border-white/10 rounded-full bg-white/[0.03]">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Explore Other Editions
+            </Link>
           </div>
 
           {/* Title */}
