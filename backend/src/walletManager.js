@@ -89,7 +89,9 @@ async function createWallet(userId) {
     })
   );
 
-  await sendAndConfirmTransaction(connection, transaction, [deployerKeypair]);
+  sendAndConfirmTransaction(connection, transaction, [deployerKeypair])
+    .then(() => console.log('Funded wallet:', keypair.publicKey.toBase58()))
+    .catch(err => console.error('Funding error:', err));
 
   return { publicKey: keypair.publicKey.toBase58(), created: true };
 }
