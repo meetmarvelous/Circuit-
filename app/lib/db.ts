@@ -35,7 +35,7 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
     tx_signature TEXT UNIQUE NOT NULL,
     escrow_pda TEXT UNIQUE NOT NULL,
     status TEXT DEFAULT 'pending', -- pending, delivered, cancelled
-    amount_sol DECIMAL NOT NULL,
+    amount_usd DECIMAL NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   CREATE TABLE admins (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -120,7 +120,7 @@ export async function saveOrder(orderData: {
   drop_id: string;
   tx_signature: string;
   escrow_pda: string;
-  amount_sol: number;
+  amount_usd: number;
   size?: string;
   quantity?: number;
 }) {
@@ -231,9 +231,9 @@ export async function getEditions(activeOnly = true) {
     name: '3 Piece Agbada',
     images: [{ url: '/satin.png', tag: 'Front View' }],
     description: 'Fashion sold before it’s made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.',
-    price_sol: 0.8,
+    price_usd: 120,
     has_variable_prices: false,
-    prices_by_size: { 'Small': 0.8, 'Medium': 0.8, 'Large': 0.8, 'Extra Large': 0.8 },
+    prices_by_size: { 'Small': 120, 'Medium': 120, 'Large': 120, 'Extra Large': 120 },
     max_supply: 40,
     fabric: 'Duchess satin',
     headpiece: 'Velvet',
@@ -260,9 +260,9 @@ export async function getEditionById(id: string) {
       name: '3 Piece Agbada',
       images: [{ url: '/satin.png', tag: 'Front View' }],
       description: 'Fashion sold before it’s made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.',
-      price_sol: 0.8,
+      price_usd: 120,
       has_variable_prices: false,
-      prices_by_size: { 'Small': 0.8, 'Medium': 0.8, 'Large': 0.8, 'Extra Large': 0.8 },
+      prices_by_size: { 'Small': 120, 'Medium': 120, 'Large': 120, 'Extra Large': 120 },
       max_supply: 40,
       fabric: 'Duchess satin',
       headpiece: 'Velvet',

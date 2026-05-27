@@ -279,7 +279,7 @@ function PassportContent() {
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-[#444]">Escrow Funds Secured</span>
-                      <span className="text-white">{order.amount_sol} SOL</span>
+                      <span className="text-white">${order.amount_usd} USD</span>
                     </div>
                   </div>
                 </div>

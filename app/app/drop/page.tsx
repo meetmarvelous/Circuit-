@@ -31,7 +31,7 @@ const fallbackEdition = {
   name: '3 Piece Agbada',
   images: [{ url: '/satin.png', tag: 'Front View' }],
   description: 'Fashion sold before it’s made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.',
-  price_sol: 0.8,
+  price_usd: 0.8,
   has_variable_prices: false,
   prices_by_size: { 'Small': 0.8, 'Medium': 0.8, 'Large': 0.8, 'Extra Large': 0.8 },
   max_supply: 40,
@@ -54,8 +54,11 @@ function DropPageContent() {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState('Medium');
   const [quantity, setQuantity] = useState(1);
-  const [computedPrice, setComputedPrice] = useState(0.8);
+  const [computedPrice, setComputedPrice] = useState(120);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<'fiat' | 'crypto'>('crypto');
+  const [solPrice, setSolPrice] = useState<number | null>(null);
+  const [showFiatModal, setShowFiatModal] = useState(false);
   const processingRef = useRef(false);
   const router = useRouter();
 
@@ -94,9 +97,9 @@ function DropPageContent() {
         // Calculate dynamic price based on size
         if (activeEdition.has_variable_prices && activeEdition.prices_by_size) {
           const priceMap = activeEdition.prices_by_size;
-          setComputedPrice(Number(priceMap[selectedSize] || activeEdition.price_sol));
+          setComputedPrice(Number(priceMap[selectedSize] || activeEdition.price_usd));
         } else {
-          setComputedPrice(Number(activeEdition.price_sol));
+          setComputedPrice(Number(activeEdition.price_usd));
         }
 
         // Fetch exact supply count from database
@@ -109,6 +112,17 @@ function DropPageContent() {
           if (!error && count !== null) {
             setMintedCount(count);
           }
+        }
+
+        // Fetch Live SOL Price
+        try {
+          const res = await fetch('https://api.jup.ag/price/v2?ids=SOL');
+          const data = await res.json();
+          if (data?.data?.SOL?.price) {
+            setSolPrice(Number(data.data.SOL.price));
+          }
+        } catch (e) {
+          console.error('Failed to fetch SOL price', e);
         }
       } catch (err) {
         console.error('Error fetching dynamic drop details:', err);
@@ -128,9 +142,9 @@ function DropPageContent() {
     if (edition) {
       if (edition.has_variable_prices && edition.prices_by_size) {
         const priceMap = edition.prices_by_size;
-        setComputedPrice(Number(priceMap[selectedSize] || edition.price_sol));
+        setComputedPrice(Number(priceMap[selectedSize] || edition.price_usd));
       } else {
-        setComputedPrice(Number(edition.price_sol));
+        setComputedPrice(Number(edition.price_usd));
       }
     }
   }, [selectedSize, edition]);
@@ -153,13 +167,22 @@ function DropPageContent() {
       return;
     }
 
+    if (paymentMethod === 'fiat') {
+      setShowFiatModal(true);
+      return;
+    }
+
     processingRef.current = true;
     setTxState('signing');
     setTxResult({});
 
     try {
-      const unitPrice = computedPrice;
-      const totalAmountSol = unitPrice * quantity;
+      const unitPriceUsd = computedPrice;
+      const totalAmountUsd = unitPriceUsd * quantity;
+      
+      // Calculate SOL equivalent
+      const currentSolPrice = solPrice || 150; // Fallback to 150 if api fails
+      const totalAmountSol = totalAmountUsd / currentSolPrice;
 
       // 1. Solana Handshake (via backend custodial escrow transaction)
       const result = await initializeEscrow(user.email, edition.id, totalAmountSol);
@@ -170,7 +193,7 @@ function DropPageContent() {
         drop_id: edition.id,
         tx_signature: result.txSignature,
         escrow_pda: result.escrowPDA,
-        amount_sol: totalAmountSol,
+        amount_usd: totalAmountUsd,
         size: selectedSize,
         quantity: quantity
       });
@@ -336,7 +359,27 @@ function DropPageContent() {
           </div>
 
           {/* Transaction CTA */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-6">
+            
+            {/* Payment Method Selector */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[0.65rem] text-[#666] uppercase tracking-[0.12em] font-bold">Payment Method</span>
+              <div className="flex bg-white/[0.02] border border-white/5 rounded-xl p-1 gap-1">
+                <button 
+                  onClick={() => setPaymentMethod('crypto')}
+                  className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest rounded-lg transition-all ${paymentMethod === 'crypto' ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.1)]' : 'text-[#666] hover:text-white hover:bg-white/[0.02]'}`}
+                >
+                  Crypto (SOL)
+                </button>
+                <button 
+                  onClick={() => setPaymentMethod('fiat')}
+                  className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest rounded-lg transition-all ${paymentMethod === 'fiat' ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.1)]' : 'text-[#666] hover:text-white hover:bg-white/[0.02]'}`}
+                >
+                  Fiat (Card)
+                </button>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4 items-center">
               <button
                 className={`btn-circuit w-full sm:w-auto ${txState === 'signing' ? 'signing' : ''} ${isSoldOut ? '!bg-[#111] !text-[#444] !border-white/5' : ''}`}
@@ -347,7 +390,8 @@ function DropPageContent() {
                   {txState === 'signing' ? 'Confirming...' : 
                    txState === 'success' ? '✓ Order Confirmed' :
                    isSoldOut ? 'Scarcity Reached' :
-                   `Pay ${(computedPrice * quantity).toFixed(2)} SOL`}
+                   paymentMethod === 'fiat' ? `Pay $${(computedPrice * quantity).toFixed(2)} USD` :
+                   `Pay $${(computedPrice * quantity).toFixed(2)} USD (~${solPrice ? ((computedPrice * quantity) / solPrice).toFixed(3) : '...'} SOL)`}
                 </span>
                 <span className="btn-arrow">
                   {txState === 'signing' ? (
@@ -485,6 +529,70 @@ function DropPageContent() {
       </div>
 
       <SignInModal isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} />
+
+      {/* Fiat Checkout Mock Modal */}
+      {showFiatModal && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-md px-4">
+          <div className="card-glass w-full max-w-md p-8 border border-white/10 rounded-3xl shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative animate-fade-in">
+            <button 
+              onClick={() => setShowFiatModal(false)}
+              className="absolute top-4 right-4 text-[#666] hover:text-white transition-colors p-2"
+            >
+              ✕
+            </button>
+            <div className="flex flex-col gap-6">
+              <div className="text-center">
+                <h3 className="text-xl font-bold mb-1">Card Payment</h3>
+                <p className="text-xs text-[#888]">Powered by Circuit Fiat Gateway</p>
+              </div>
+              
+              <div className="p-4 bg-white/[0.03] rounded-xl border border-white/5 flex justify-between items-center">
+                <span className="text-sm text-[#888]">Total Amount</span>
+                <span className="text-2xl font-bold">${(computedPrice * quantity).toFixed(2)}</span>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[0.65rem] font-bold uppercase tracking-wider text-[#666]">Card Information</label>
+                  <input type="text" placeholder="Card number" className="w-full bg-transparent border border-white/10 rounded-t-xl px-4 py-3 text-sm focus:border-white/30 focus:outline-none transition-colors" />
+                  <div className="flex">
+                    <input type="text" placeholder="MM / YY" className="w-1/2 bg-transparent border-x border-b border-white/10 rounded-bl-xl px-4 py-3 text-sm focus:border-white/30 focus:outline-none transition-colors" />
+                    <input type="text" placeholder="CVC" className="w-1/2 bg-transparent border-b border-r border-white/10 rounded-br-xl px-4 py-3 text-sm focus:border-white/30 focus:outline-none transition-colors" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[0.65rem] font-bold uppercase tracking-wider text-[#666]">Name on Card</label>
+                  <input type="text" placeholder="Full name" className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-white/30 focus:outline-none transition-colors" />
+                </div>
+              </div>
+
+              <button 
+                className={`btn-circuit w-full justify-center py-4 mt-2 ${txState === 'signing' ? 'signing' : ''}`}
+                onClick={() => {
+                  setTxState('signing');
+                  setTimeout(() => {
+                    setTxState('success');
+                    router.push('/confirm');
+                  }, 2000);
+                }}
+                disabled={txState === 'signing'}
+              >
+                <span>
+                  {txState === 'signing' ? 'Processing...' : `Pay $${(computedPrice * quantity).toFixed(2)}`}
+                </span>
+                <span className="btn-arrow">
+                  {txState === 'signing' ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><path d="M12 2a10 10 0 010 20 10 10 0 010-20"/></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  )}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </section>
   );
 }

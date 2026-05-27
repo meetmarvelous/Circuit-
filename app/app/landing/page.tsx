@@ -133,7 +133,7 @@ export default function LandingPage() {
                           
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-white/90">
-                              {edition.has_variable_prices ? 'Variable Pricing' : `${edition.price_sol} SOL`}
+                              {edition.has_variable_prices ? 'Variable Pricing' : `${edition.price_usd} USD`}
                             </span>
                             <span className="text-[0.65rem] font-bold uppercase tracking-wider text-white/70 group-hover:text-white transition-colors flex items-center gap-1 border border-white/10 px-2 py-1 rounded-full bg-white/[0.05]">
                               Architect Drop

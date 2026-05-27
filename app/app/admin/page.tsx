@@ -17,7 +17,7 @@ interface Order {
   tx_signature: string;
   created_at: string;
   size?: string;
-  amount_sol: number;
+  amount_usd: number;
   garment_serial?: string;
   delivery_location?: string;
   delivery_address?: string;
@@ -29,7 +29,7 @@ interface Edition {
   name: string;
   images: { url: string; tag: string; file?: File }[];
   description: string;
-  price_sol: number;
+  price_usd: number;
   has_variable_prices: boolean;
   prices_by_size: Record<string, number>;
   max_supply: number;
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
     name: string;
     images: { url: string; tag: string; file?: File }[];
     description: string;
-    price_sol: number;
+    price_usd: number;
     has_variable_prices: boolean;
     prices_by_size: Record<string, number>;
     max_supply: number;
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
     name: '',
     images: [{ url: '/satin.png', tag: 'Front View' }],
     description: '',
-    price_sol: 0.8,
+    price_usd: 0.8,
     has_variable_prices: false,
     prices_by_size: {
       Small: 0.8,
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
       : orders.filter(o => o.drop_id === selectedOrdersEditionId);
 
   // Calculate dynamic stats
-  const totalRevenue = activeOrdersForTab.reduce((acc, o) => acc + Number(o.amount_sol || 0), 0);
+  const totalRevenue = activeOrdersForTab.reduce((acc, o) => acc + Number(o.amount_usd || 0), 0);
   const stats = {
     totalRevenue,
     totalClaims: activeOrdersForTab.length,
@@ -261,7 +261,7 @@ export default function AdminDashboard() {
       setSelectedEdition(null);
       setIsFormActive(false);
       setEditionForm({
-        id: '', name: '', images: [{ url: '/satin.png', tag: 'Front View' }], description: '', price_sol: 0.8,
+        id: '', name: '', images: [{ url: '/satin.png', tag: 'Front View' }], description: '', price_usd: 0.8,
         has_variable_prices: false, prices_by_size: { Small: 0.8, Medium: 0.8, Large: 0.8, 'Extra Large': 0.8 },
         max_supply: 40, fabric: 'Duchess satin', headpiece: 'Velvet', embroidery: 'Metallic thread', is_active: true
       });
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
       name: ed.name,
       images: ed.images || [],
       description: ed.description,
-      price_sol: ed.price_sol,
+      price_usd: ed.price_usd,
       has_variable_prices: ed.has_variable_prices,
       prices_by_size: ed.prices_by_size || { Small: 0.8, Medium: 0.8, Large: 0.8, 'Extra Large': 0.8 },
       max_supply: ed.max_supply,
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
       name: '',
       images: [{ url: '/satin.png', tag: 'Front View' }],
       description: '',
-      price_sol: 0.8,
+      price_usd: 0.8,
       has_variable_prices: false,
       prices_by_size: { Small: 0.8, Medium: 0.8, Large: 0.8, 'Extra Large': 0.8 },
       max_supply: 40,
@@ -437,14 +437,14 @@ export default function AdminDashboard() {
 
                     <div className="flex justify-between items-center text-[0.6rem] font-mono text-white/50 pt-4 border-t border-white/5">
                       <span>Total Claims: {orders.length}</span>
-                      <span>Total Revenue: {orders.reduce((acc, o) => acc + Number(o.amount_sol || 0), 0).toFixed(2)} SOL</span>
+                      <span>Total Revenue: {orders.reduce((acc, o) => acc + Number(o.amount_usd || 0), 0).toFixed(2)} USD</span>
                     </div>
                   </div>
 
                   {/* Individual Editions */}
                   {editions.map((ed) => {
                     const edOrders = orders.filter(o => o.drop_id === ed.id);
-                    const edRevenue = edOrders.reduce((acc, o) => acc + Number(o.amount_sol || 0), 0);
+                    const edRevenue = edOrders.reduce((acc, o) => acc + Number(o.amount_usd || 0), 0);
                     const edPending = edOrders.filter(o => o.status === 'pending').length;
                     const edInProduction = edOrders.filter(o => o.status === 'in_production').length;
 
@@ -480,7 +480,7 @@ export default function AdminDashboard() {
                                 Max Supply: {ed.max_supply} Units
                               </p>
                               <p className="text-[0.65rem] text-emerald-400 font-mono mt-0.5">
-                                Base: {ed.price_sol} SOL
+                                Base:  USD
                               </p>
                             </div>
                           </div>
@@ -572,7 +572,7 @@ export default function AdminDashboard() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-12 print:hidden">
                   {[
-                    { label: 'Total Revenue', value: `${stats.totalRevenue.toFixed(2)} SOL`, color: 'text-white' },
+                    { label: 'Total Revenue', value: `${stats.totalRevenue.toFixed(2)} USD`, color: 'text-white' },
                     { label: 'Total Claims', value: `${stats.totalClaims} Runs`, color: 'text-white' },
                     { label: 'Awaiting Tailor', value: stats.pending, color: 'text-amber-500' },
                     { label: 'In Production', value: stats.inProduction, color: 'text-blue-500' },
@@ -618,7 +618,7 @@ export default function AdminDashboard() {
                             </div>
                             <div className="text-right">
                               <span className="block text-[0.6rem] text-[#444] uppercase font-mono">Amount Paid</span>
-                              <span className="text-md font-bold text-white">{order.amount_sol} SOL | Size: {order.size || 'M'}</span>
+                              <span className="text-md font-bold text-white">${order.amount_usd} USD | Size: {order.size || 'M'}</span>
                             </div>
                           </div>
 
@@ -973,12 +973,12 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Base Price (SOL)</label>
+                      <label className="text-[0.65rem] text-[#666] uppercase tracking-wider font-bold">Base Price (USD)</label>
                       <input
                         type="number"
                         step="0.01"
-                        value={editionForm.price_sol}
-                        onChange={(e) => setEditionForm(prev => ({ ...prev, price_sol: Number(e.target.value) }))}
+                        value={editionForm.price_usd}
+                        onChange={(e) => setEditionForm(prev => ({ ...prev, price_usd: Number(e.target.value) }))}
                         className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white/30 font-mono"
                       />
                     </div>
@@ -1021,7 +1021,7 @@ export default function AdminDashboard() {
                           <input
                             type="number"
                             step="0.01"
-                            value={(editionForm.prices_by_size as any)[sz] || editionForm.price_sol}
+                            value={(editionForm.prices_by_size as any)[sz] || editionForm.price_usd}
                             onChange={(e) => setEditionForm(prev => ({
                               ...prev,
                               prices_by_size: {
@@ -1097,7 +1097,7 @@ export default function AdminDashboard() {
                           </div>
                           <span className="text-[0.6rem] font-mono text-white/40 block mt-0.5">Slug ID: {ed.id}</span>
                           <span className="text-xs text-emerald-400 font-bold block mt-2 font-mono">
-                            {ed.has_variable_prices ? 'Variable Sizing' : `${ed.price_sol} SOL`}
+                            {ed.has_variable_prices ? 'Variable Sizing' : `${ed.price_usd} USD`}
                           </span>
                         </div>
                       </div>
