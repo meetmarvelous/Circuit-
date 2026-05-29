@@ -97,7 +97,7 @@ function DropPageContent() {
         // Calculate dynamic price based on size
         if (activeEdition.has_variable_prices && activeEdition.prices_by_size) {
           const priceMap = activeEdition.prices_by_size;
-          setComputedPrice(Number(priceMap[selectedSize] || activeEdition.price_usd));
+          setComputedPrice(Number((priceMap as Record<string, number>)[selectedSize] || activeEdition.price_usd));
         } else {
           setComputedPrice(Number(activeEdition.price_usd));
         }
