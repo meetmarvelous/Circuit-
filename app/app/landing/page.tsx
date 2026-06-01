@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import NewsletterForm from '@/components/NewsletterForm';
 import { getEditions } from '@/lib/db';
 
 interface FAQItemProps {
@@ -16,7 +17,7 @@ function FAQItem({ question, answer }: FAQItemProps) {
 
   return (
     <div className="border-b border-white/10">
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full py-6 flex items-center justify-between text-left group"
       >
@@ -57,13 +58,13 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-black text-white selection:bg-white selection:text-black">
       <Navbar customEditions={editions} />
-      
+
       <main className="flex-1">
         {/* HERO SECTION */}
         <section className="section-container pt-32 pb-16 md:pt-44 md:pb-8 text-center relative overflow-hidden">
           {/* Ambient Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.03)_0%,_transparent_70%)] pointer-events-none" />
-          
+
           <div className="animate-fade-in flex flex-col items-center relative z-10">
             <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#666] mb-8 px-4 py-1.5 border border-white/10 rounded-full">
               Built on Solana
@@ -74,7 +75,7 @@ export default function LandingPage() {
             <p className="text-base md:text-xl text-[#888] leading-relaxed max-w-2xl mb-12">
               Circuit is a demand-first fashion production system where garments are only produced after buyers commit.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
               <a href="#collections-slider" className="btn-circuit py-4 px-10 text-xs w-full sm:w-auto justify-center">
                 <span>Browse Editions</span>
@@ -124,20 +125,20 @@ export default function LandingPage() {
                           className="object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-500" />
-                        
+
                         <div className="absolute bottom-6 left-6 right-6">
                           <span className="text-[0.6rem] font-bold tracking-[0.15em] text-white/50 uppercase block mb-2">
                             Limited to {edition.max_supply} pieces
                           </span>
                           <h3 className="text-xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors">{edition.name}</h3>
-                          
+
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-white/90">
                               {edition.has_variable_prices ? 'Variable Pricing' : `${edition.price_usd} USD`}
                             </span>
                             <span className="text-[0.65rem] font-bold uppercase tracking-wider text-white/70 group-hover:text-white transition-colors flex items-center gap-1 border border-white/10 px-2 py-1 rounded-full bg-white/[0.05]">
                               Architect Drop
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                             </span>
                           </div>
                         </div>
@@ -166,14 +167,14 @@ export default function LandingPage() {
                 <p className="text-white font-medium">Production only begins after demand is confirmed.</p>
               </div>
             </div>
-            
+
             <div className="order-1 lg:order-2">
               <div className="card-glass overflow-hidden relative aspect-[4/5] lg:aspect-square group border-white/[0.08]">
                 <Image src={selectedEdition?.images?.[0]?.url || "/satin.png"} alt="Process shot" fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-8 left-8">
-                   <div className="w-12 h-0.5 bg-white mb-4" />
-                    <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Current Editions</p>
+                  <div className="w-12 h-0.5 bg-white mb-4" />
+                  <p className="text-[0.65rem] font-bold uppercase tracking-widest text-white/40">Current Editions</p>
                 </div>
               </div>
             </div>
@@ -186,7 +187,7 @@ export default function LandingPage() {
             <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#444] mb-4 block">Process</span>
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight">How It Works.</h2>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-white/10 border border-white/10 rounded-3xl overflow-hidden">
             {[
               { title: 'Commit', desc: 'Secure your place in the drop by placing an order for the garment.' },
@@ -195,7 +196,7 @@ export default function LandingPage() {
               { title: 'Delivery', desc: 'Your garment is shipped. You scan to confirm and release the escrow.' }
             ].map((item, i) => (
               <div key={i} className="bg-black p-10 flex flex-col gap-4 group hover:bg-white/[0.02] transition-colors">
-                <span className="text-[0.6rem] font-mono text-[#333] group-hover:text-white/40 transition-colors">0{i+1}</span>
+                <span className="text-[0.6rem] font-mono text-[#333] group-hover:text-white/40 transition-colors">0{i + 1}</span>
                 <h4 className="text-lg font-bold">{item.title}</h4>
                 <p className="text-xs text-[#666] leading-relaxed">{item.desc}</p>
               </div>
@@ -221,37 +222,37 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="lg:col-span-2">
-              <FAQItem 
-                question="1. What does made-to-order actually mean?" 
+              <FAQItem
+                question="1. What does made-to-order actually mean?"
                 answer="Your garment is only produced after you place an order. We do not manufacture inventory in advance and hope it sells later."
               />
-              <FAQItem 
-                question="2. Do I need crypto or a wallet to use Circuit?" 
+              <FAQItem
+                question="2. Do I need crypto or a wallet to use Circuit?"
                 answer="No. You sign up with your email and complete your order normally."
               />
-              <FAQItem 
-                question="3. What happens to my payment while I wait?" 
+              <FAQItem
+                question="3. What happens to my payment while I wait?"
                 answer="Your payment is secured until your order is delivered. Circuit does not receive funds upfront. Payment is only released after delivery is confirmed."
               />
-              <FAQItem 
-                question="4. What is the digital record attached to each garment?" 
+              <FAQItem
+                question="4. What is the digital record attached to each garment?"
                 answer="Each Circuit garment includes a permanent digital record showing when it was produced, what drop it belongs to, and its ownership history."
               />
-              <FAQItem 
-                question="5. Can I resell my Circuit garment?" 
+              <FAQItem
+                question="5. Can I resell my Circuit garment?"
                 answer="Yes. Each garment carries a verifiable ownership record, making resale and authenticity easier to track."
               />
-              <FAQItem 
-                question="6. How limited is each drop?" 
+              <FAQItem
+                question="6. How limited is each drop?"
                 answer="Each drop has a fixed maximum quantity. Once that number is reached, orders close."
               />
-              <FAQItem 
-                question="7. How long does production take?" 
+              <FAQItem
+                question="7. How long does production take?"
                 answer="Production begins only after your order is confirmed. Timeline is specific to each drop and communicated before you commit."
               />
-              <FAQItem 
-                question="8. When does Drop Zero open?" 
-                answer="Drop Zero opens to the waitlist first. Join above to be notified before the public."
+              <FAQItem
+                question="8. When does Drop Zero open?"
+                answer="Drop Zero opens to the waitlist first. Join to be notified before the public."
               />
             </div>
           </div>
@@ -260,23 +261,14 @@ export default function LandingPage() {
         {/* FINAL CTA */}
         <section className="section-container pb-32">
           <div className="card-glass p-12 md:p-24 text-center overflow-hidden relative border-white/[0.05]">
-             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_#fff_0%,_transparent_70%)]" />
-             <div className="relative z-10 max-w-2xl mx-auto">
-               <h2 className="text-4xl md:text-6xl font-bold mb-8 tracking-tighter text-white">
-                 Get early access
-               </h2>
-               
-               <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-                 <input 
-                   type="email" 
-                   placeholder="Enter email address" 
-                   className="w-full bg-white/[0.05] border border-white/10 px-8 py-5 rounded-full text-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-[#333]"
-                 />
-                 <button className="btn-circuit w-full md:w-auto justify-center whitespace-nowrap py-5 px-10">
-                   <span>Notify Me</span>
-                 </button>
-               </div>
-             </div>
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_#fff_0%,_transparent_70%)]" />
+            <div className="relative z-10 max-w-2xl mx-auto">
+              <h2 className="text-4xl md:text-6xl font-bold mb-8 tracking-tighter text-white">
+                Get early access
+              </h2>
+
+              <NewsletterForm />
+            </div>
           </div>
         </section>
       </main>
