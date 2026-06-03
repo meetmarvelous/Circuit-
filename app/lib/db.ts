@@ -180,39 +180,29 @@ export async function getUserOrders(email: string) {
 // Supabase storage removed — editions use static fallback until backend
 // endpoints for edition management are added.
 
-export async function getEditions(_activeOnly = true) {
-  return [{
-    id: 'drop-zero',
-    name: '3 Piece Agbada',
-    images: [{ url: '/satin.png', tag: 'Front View' }],
-    description: "Fashion sold before it's made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.",
-    price_usd: 120,
-    has_variable_prices: false,
-    prices_by_size: { 'Small': 120, 'Medium': 120, 'Large': 120, 'Extra Large': 120 },
-    max_supply: 40,
-    fabric: 'Duchess satin',
-    headpiece: 'Velvet',
-    embroidery: 'Metallic thread',
-    is_active: true
-  }];
+export async function getEditions(activeOnly = true) {
+  try {
+    const url = new URL(`${BASE}/api/editions`);
+    if (!activeOnly) url.searchParams.append('active', 'false');
+    
+    const res = await fetch(url.toString());
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.error('getEditions Fetch Error:', err);
+  }
+  return [];
 }
 
 export async function getEditionById(id: string) {
-  if (id === 'drop-zero' || id) {
-    return {
-      id: id || 'drop-zero',
-      name: '3 Piece Agbada',
-      images: [{ url: '/satin.png', tag: 'Front View' }],
-      description: "Fashion sold before it's made. Circuit reverses the order of production by making manufacturing conditional on confirmed demand.",
-      price_usd: 120,
-      has_variable_prices: false,
-      prices_by_size: { 'Small': 120, 'Medium': 120, 'Large': 120, 'Extra Large': 120 },
-      max_supply: 40,
-      fabric: 'Duchess satin',
-      headpiece: 'Velvet',
-      embroidery: 'Metallic thread',
-      is_active: true
-    };
+  try {
+    const res = await fetch(`${BASE}/api/editions/${encodeURIComponent(id)}`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.error('getEditionById Fetch Error:', err);
   }
   return null;
 }
