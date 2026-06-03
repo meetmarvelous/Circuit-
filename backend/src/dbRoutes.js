@@ -385,4 +385,106 @@ router.get('/editions/:id', async (req, res) => {
   }
 });
 
+// POST /api/editions  — insert/update edition
+router.post('/editions', async (req, res) => {
+  try {
+    const editionData = req.body;
+    
+    // Ensure image_url is provided to avoid NOT NULL constraint errors
+    const payload = {
+      ...editionData,
+      image_url: editionData.images?.[0]?.url || '/satin.png'
+    };
+    
+    const { data, error } = await supabase
+      .from('editions')
+      .upsert(payload, { onConflict: 'id' })
+      .select();
+      
+    if (error) {
+      console.error('Save edition Supabase error:', error.message);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data || []);
+  } catch (err) {
+    console.error('Error in POST /api/editions:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/editions/image — upload Base64 image
+router.post('/editions/image', async (req, res) => {
+  try {
+    const { id, fileName, contentType, base64Data } = req.body;
+    if (!base64Data || !fileName || !id) {
+      return res.status(400).json({ error: 'Missing required image payload fields' });
+    }
+
+    // Convert Base64 back to binary buffer
+    // base64Data usually comes as "data:image/png;base64,iVBORw0KGgo..."
+    const base64String = base64Data.split(',')[1] || base64Data;
+    const buffer = Buffer.from(base64String, 'base64');
+    
+    const safeFileName = `${id}-${Date.now()}-${fileName}`;
+    const filePath = `collections/${safeFileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('collection-images')
+      .upload(filePath, buffer, {
+        contentType: contentType || 'image/png',
+        cacheControl: '3600',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Upload image Supabase error:', uploadError.message);
+      return res.status(500).json({ error: uploadError.message });
+    }
+
+    const { data } = supabase.storage
+      .from('collection-images')
+      .getPublicUrl(filePath);
+
+    res.json({ publicUrl: data.publicUrl });
+  } catch (err) {
+    console.error('Error in POST /api/editions/image:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/editions/image — delete image from storage
+router.delete('/editions/image', async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'imageUrl is required' });
+    }
+    
+    // Ignore placeholder
+    if (!imageUrl.includes('supabase.co') && !imageUrl.includes('supabase.in')) {
+      return res.json({ success: true }); 
+    }
+
+    // Extract file path from public URL
+    const parts = imageUrl.split('/collection-images/');
+    if (parts.length < 2) return res.status(400).json({ error: 'Invalid Supabase URL format' });
+    const filePath = decodeURIComponent(parts[1]);
+
+    const { error } = await supabase.storage
+      .from('collection-images')
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Delete image Supabase error:', error.message);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error in DELETE /api/editions/image:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
