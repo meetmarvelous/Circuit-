@@ -206,7 +206,7 @@ export default function LandingPage() {
 
         {/* THE GARMENT (Full Width Visual) */}
         <section className="relative h-[70vh] md:h-[90vh] overflow-hidden border-y border-white/10">
-          <Image src="/satin.png" alt="Craft Detail" fill className="object-cover opacity-40 brightness-75" />
+          <Image src="/yellow.jpg" alt="Craft Detail" fill className="object-cover opacity-40 brightness-75" />
           <div className="absolute inset-0 flex items-center justify-center text-center p-8">
           </div>
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-px h-20 bg-gradient-to-b from-white/0 to-white/40" />
