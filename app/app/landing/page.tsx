@@ -204,12 +204,15 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* THE GARMENT (Full Width Visual) */}
-        <section className="relative h-[70vh] md:h-[90vh] overflow-hidden border-y border-white/10">
-          <Image src="/yellow.jpg" alt="Craft Detail" fill className="object-cover opacity-40 brightness-75" />
-          <div className="absolute inset-0 flex items-center justify-center text-center p-8">
+        {/* THE GARMENT (Split Visual) */}
+        <section className="relative border-y border-white/10 flex flex-col md:flex-row md:h-[90vh] overflow-hidden">
+          <div className="relative w-full aspect-[3/4] md:aspect-auto md:flex-1 md:h-full">
+            <Image src="/yellow-gown.jpg" alt="Craft Detail" fill className="object-cover object-top md:object-[center_10%]" />
           </div>
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-px h-20 bg-gradient-to-b from-white/0 to-white/40" />
+          <div className="relative w-full aspect-[3/4] md:aspect-auto md:flex-1 md:h-full">
+            <Image src="/yellow-gown2.jpg" alt="Craft Detail Angle 2" fill className="object-cover object-top md:object-[center_10%]" />
+          </div>
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-px h-20 bg-gradient-to-b from-white/0 to-white/40 z-10 hidden md:block" />
         </section>
 
         {/* FAQ Section */}
