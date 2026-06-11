@@ -152,7 +152,7 @@ export default function LandingPage() {
         </section>
 
         {/* SECTION TWO — WHY CIRCUIT EXISTS */}
-        <section className="bg-white/[0.01] border-y border-white/[0.05] py-20 md:pt-16 md:pb-32">
+        <section className="bg-white/[0.01] border-y border-white/[0.05] py-16 md:py-20">
           <div className="section-container grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div className="order-2 lg:order-1 max-w-xl">
               <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#444] mb-8 block">
@@ -182,7 +182,7 @@ export default function LandingPage() {
         </section>
 
         {/* HOW IT WORKS */}
-        <section id="how-it-works" className="py-20 md:py-32 section-container">
+        <section id="how-it-works" className="pt-12 pb-10 md:pt-20 md:pb-16 section-container">
           <div className="text-center mb-20">
             <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#444] mb-4 block">Process</span>
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight">How It Works.</h2>
@@ -204,15 +204,45 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* THE GARMENT (Split Visual) */}
-        <section className="relative border-y border-white/10 flex flex-col md:flex-row md:h-[90vh] overflow-hidden">
-          <div className="relative w-full aspect-[3/4] md:aspect-auto md:flex-1 md:h-full">
-            <Image src="/yellow-gown.jpg" alt="Craft Detail" fill className="object-cover object-top md:object-[center_10%]" />
+        {/* THE GARMENT (Editorial Gallery) */}
+        <section className="section-container pt-10 pb-16 md:pt-16 md:pb-32">
+          <div className="flex items-end justify-between mb-8 md:mb-12">
+            <div className="flex flex-col gap-2">
+              <span className="text-[0.6rem] font-bold uppercase tracking-[0.3em] text-[#666]">Craftsmanship</span>
+              <h2 className="text-2xl md:text-4xl font-bold tracking-tight">Precision Tailoring.</h2>
+            </div>
+            <span className="text-[0.65rem] font-mono text-[#666] uppercase tracking-widest hidden sm:block border border-white/10 px-4 py-2 rounded-full">
+              Made to Measure // Circuit
+            </span>
           </div>
-          <div className="relative w-full aspect-[3/4] md:aspect-auto md:flex-1 md:h-full">
-            <Image src="/yellow-gown2.jpg" alt="Craft Detail Angle 2" fill className="object-cover object-top md:object-[center_10%]" />
+
+          <div className="flex flex-col md:flex-row gap-6 md:gap-10 md:h-[80vh]">
+            {/* Image 1 */}
+            <div className="relative w-full aspect-[3/4] md:aspect-auto md:flex-1 md:h-full rounded-[2rem] overflow-hidden border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)] group bg-[#0A0A0A]">
+              <Image src="/yellow-gown.jpg" alt="Craft Detail Front" fill className="object-cover object-top md:object-[center_10%] group-hover:scale-105 transition-transform duration-[2s] ease-out" />
+              
+              {/* Subtle Overlay & Badge */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 transition-opacity duration-700" />
+              <div className="absolute bottom-6 left-6">
+                <span className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/[0.12] text-[0.65rem] font-bold uppercase tracking-[0.15em] text-white shadow-xl">
+                  Flawless Drape
+                </span>
+              </div>
+            </div>
+
+            {/* Image 2 (Staggered on Desktop) */}
+            <div className="relative w-full aspect-[3/4] md:aspect-auto md:flex-1 md:h-full rounded-[2rem] overflow-hidden border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)] group bg-[#0A0A0A] md:mt-16">
+              <Image src="/yellow-gown2.jpg" alt="Craft Detail Angle" fill className="object-cover object-top md:object-[center_10%] group-hover:scale-105 transition-transform duration-[2s] ease-out" />
+              
+              {/* Subtle Overlay & Badge */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 transition-opacity duration-700" />
+              <div className="absolute bottom-6 left-6">
+                <span className="px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/[0.12] text-[0.65rem] font-bold uppercase tracking-[0.15em] text-white shadow-xl">
+                  Structured Form
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-px h-20 bg-gradient-to-b from-white/0 to-white/40 z-10 hidden md:block" />
         </section>
 
         {/* FAQ Section */}
